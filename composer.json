@@ -1,0 +1,23 @@
+{
+    "name": "brosolutions/quick-order",
+    "description": "QuickOrder module",
+    "require": {
+        "php": ">=7.4",
+        "magento/framework": "*",
+        "magento/module-catalog": "*",
+        "magento/module-store": "*",
+        "magento/module-eav": "*"
+    },
+    "type": "magento2-module",
+    "version": "1.0.0",
+    "license": "MIT",
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "BroSolutions\\QuickOrder\\": ""
+        }
+    }
+}
+

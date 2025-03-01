@@ -1,0 +1,2043 @@
+<?php
+/**
+ * Copyright (c) 2025 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Quickorder;
+use Magento\Framework\Escaper;
+
+/**
+ * @var Quickorder $block
+ * @var Escaper $escaper
+ **/
+?>
+
+<h1><?= $escaper->escapeHtml(__('Quick Order'))?></h1>
+<div class="autocomplete-container">
+    <label for="search-input"><?= $escaper->escapeHtml(__('Search for items:'))?></label>
+    <input type="text" id="search-input" placeholder="<?= $escaper->escapeHtmlAttr(__('Type to search...'))?>">
+    <div id="suggestions-container" style="display: none" class="autocomplete-suggestions"></div>
+</div>
+
+<h2><?= $escaper->escapeHtml(__('Magento Product Info'))?></h2>
+
+<!-- Product Form -->
+<div class="quick-order-product-form">
+    <div id="loader-wrapper" style="display: none">
+        <div id="loader"></div>
+    </div>
+
+    <ul id="fast-product-list">
+        <li>
+            <div><?= $escaper->escapeHtml(__('Image'))?></div>
+            <div><?= $escaper->escapeHtml(__('Product(s)'))?></div>
+            <div><?= $escaper->escapeHtml(__('Sku'))?></div>
+            <div><?= $escaper->escapeHtml(__('Qty'))?></div>
+            <div><?= $escaper->escapeHtml(__('Subtotal'))?></div>
+            <div><?= $escaper->escapeHtml(__('Action'))?></div>
+        </li>
+    </ul>
+    <div class="quick-order-product-form-footer">
+        <button type="button" class="add-to-cart action primary inline-flex shrink-0 ml-auto  btn btn-primary mt-2 "
+        ><?= $escaper->escapeHtml(__('Add to cart'))?></button>
+    </div>
+</div>
+
+<script>
+    'use strict';
+
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0;i < ca.length;i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' ') c = c.substring(1,c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+        }
+        return null;
+    }
+
+    window.addEventListener('DOMContentLoaded', function () {
+        const apiSearchProductUrl = "<?= $escaper->escapeUrl($block->getQuickOrderSearchProductUrl()); ?>";
+        const apiGetProductUrl = "<?= $escaper->escapeUrl($block->getQuickOrderGetProductUrl()); ?>";
+        const apiAddToCartUrl = "<?= $escaper->escapeUrl($block->getAddToCartUrl()); ?>";
+        const uploadFileUrl = "<?= $escaper->escapeUrl($block->getUploadFileUrl()); ?>";
+        const formKey = (typeof hyva === 'object') ? hyva.getFormKey() : getCookie('form_key');
+        const mediaUrl = "<?= $escaper->escapeUrl($block->getMediaUrl()); ?>";
+        const urlToCartRedirect = "<?=  $escaper->escapeUrl($block->getUrlToCartRedirect()); ?>";
+        const mediaProductPath = "<?= $escaper->escapeHtml($block->getMediaProductPath()); ?>";
+        const storeCode = "<?= $escaper->escapeHtml($block->getStoreCode());  ?>";
+        const inputElement = document.getElementById('search-input');
+        const suggestionsContainer = document.getElementById('suggestions-container');
+        const productsFromLocalStorage = getDataFromQuickOrderLocalStorage();
+
+        productsFromLocalStorage.forEach(productData => {
+            renderProductList(productData);
+        });
+        addEventListeners();
+        addEventListenerAddToCart();
+
+        let debounceTimer;
+
+        function debounce(func, delay) {
+            return function (...args) {
+                clearTimeout(debounceTimer);  // Clear the previous timer
+                debounceTimer = setTimeout(() => func(...args), delay);  // Set a new timer
+            };
+        }
+
+        async function fetchSuggestions(query) {
+            if (!query) {
+                suggestionsContainer.innerHTML = '';
+                return;
+            }
+
+            try {
+                showSpinner(inputElement);
+                const response = await fetch(`${apiSearchProductUrl}?term=${encodeURIComponent(query)}&storeCode=${encodeURIComponent(storeCode)}`);
+                removeSpinner(inputElement);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch suggestions');
+                }
+
+                const data = await response.json();
+
+                displaySuggestions(data);
+            } catch (error) {
+                console.error('Error fetching suggestions:', error);
+                suggestionsContainer.innerHTML = '<p><?= $escaper->escapeJs(__('Error loading suggestions')) ?></p>';
+                removeSpinner(inputElement);
+            }
+        }
+
+        function displaySuggestions(items) {
+            suggestionsContainer.innerHTML = '';
+
+            if (items.length === 0) {
+                suggestionsContainer.innerHTML = '<p class="no-result"><?= $escaper->escapeJs(__('No results found')) ?></p>';
+                return;
+            }
+
+            items.forEach(item => {
+                const suggestionElement = document.createElement('div');
+                suggestionElement.classList.add('autocomplete-suggestion-inner');
+                suggestionsContainer.style.display = 'block';
+
+                const img = document.createElement('img');
+
+                img.src = item.thumbnail;
+
+                const name = document.createElement('p');
+                name.textContent = item.name;
+
+                const price = document.createElement('p');
+                price.textContent = item.price;
+
+                const sku = document.createElement('p');
+                sku.textContent = item.sku;
+
+                const imageWrap = document.createElement('div');
+                imageWrap.classList.add('image-wrap');
+                imageWrap.appendChild(img);
+                suggestionElement.appendChild(imageWrap);
+
+                const textWrap = document.createElement('div');
+                textWrap.classList.add('text-wrap');
+                textWrap.appendChild(name);
+                textWrap.appendChild(price);
+                textWrap.appendChild(sku);
+                suggestionElement.appendChild(textWrap);
+
+                suggestionElement.addEventListener('click', () => {
+                    inputElement.value = item.name;
+                    suggestionsContainer.innerHTML = '';
+                    suggestionsContainer.style.display = 'none';
+                    getProduct(item.sku);
+                });
+
+                suggestionsContainer.appendChild(suggestionElement);
+            });
+        }
+
+        inputElement.addEventListener('input', (event) => {
+            const query = event.target.value;
+            debounce(fetchSuggestions, 300)(query);
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.autocomplete-container')) {
+                suggestionsContainer.innerHTML = '';
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+
+        function showSpinner(inputField) {
+            const spinner = document.createElement('div');
+            spinner.classList.add('loading');
+            inputField.parentElement.appendChild(spinner);
+        }
+
+        function removeSpinner(inputField) {
+            const spinner = inputField.parentElement.querySelector('.loading');
+            if (spinner) {
+                spinner.remove();
+            }
+        }
+
+        async function getProduct(sku) {
+            try {
+                showSpinner(inputElement);
+                const response = await fetch(`${apiGetProductUrl}?sku=${encodeURIComponent(sku)}&storeCode=${encodeURIComponent(storeCode)}`);
+                removeSpinner(inputElement);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch products');
+                }
+
+                const data = await response.json();
+                const productData = data[0];
+                productData.pid = Date.now();
+
+                if (productData['type_id'] === "configurable") {
+                    const activeProduct = productData['active_product'];
+                    productData['price'] = activeProduct['price'];
+                }
+
+                addDataToQuickOrderLocalStorage(productData);
+                renderProductList(productData);
+                addEventListeners();
+            } catch (error) {
+                console.error('Error getting products:', error);
+                suggestionsContainer.innerHTML = '<p>Error loading products</p>';
+                removeSpinner(inputElement);
+            }
+        }
+
+        function renderProductList(productData) {
+            const list = document.getElementById('fast-product-list');
+            const li = document.createElement('li');
+            const input = document.createElement("input");
+            const div = document.createElement("div");
+
+            const fields = ['thumbnail', 'name', 'sku', 'stock', 'price'];
+
+            fields.forEach(field => {
+                const image = document.createElement('img');
+                const div = document.createElement("div");
+
+                if (field === 'thumbnail') {
+                    if (productData['type_id'] === 'configurable') {
+                        const activeProduct = productData['active_product'];
+                        image.src = activeProduct[field];
+                    } else {
+                        image.src = productData[field];
+                    }
+                    div.appendChild(image);
+                    div.classList.add("item-image");
+                } else if (field === 'name') {
+                    div.classList.add("item-name");
+                    const productNameText = document.createTextNode(productData[field]);
+                    const productNameTextWrapper = document.createElement("p");
+                    productNameTextWrapper.appendChild(productNameText);
+                    div.appendChild(productNameTextWrapper);
+
+                    if (productData['type_id'] === 'configurable') {
+
+                        const selectWrapper = document.createElement("div");
+                        selectWrapper.classList.add("select-wrapper");
+
+                        const attributeArray = productData['attributes'];
+                        attributeArray.forEach(item => {
+                            let select = document.createElement("select");
+                            select.setAttribute('data-attribute_id', item['id'])
+                            select.setAttribute('data-attribute_code', item['attribute_code'])
+                            select.setAttribute('id', item['id'])
+                            item['values'].forEach(valuesItem => {
+                                let option = document.createElement("option");
+                                option.value = valuesItem['value_index'];
+                                option.text = valuesItem['label'];
+                                const activeProduct = productData['active_product'];
+                                if (activeProduct[item['attribute_code']] === option.value) {
+                                    option.selected = true;
+                                }
+                                select.appendChild(option);
+                            });
+
+                            const selectItem = document.createElement("div");
+                            selectItem.classList.add("select-item");
+                            const selectLabel = document.createElement("label");
+                            selectLabel.setAttribute('for', item['id'])
+                            const selectLabelText = document.createTextNode(item['label']);
+
+                            selectLabel.appendChild(selectLabelText);
+                            selectItem.appendChild(selectLabel);
+                            selectItem.appendChild(select);
+
+                            selectWrapper.appendChild(selectItem);
+                        })
+                        div.appendChild(selectWrapper);
+
+                    } else if (productData['type_id'] === 'bundle') {
+                        const bundleWrapper = document.createElement("div");
+                        bundleWrapper.classList.add("quick-order-wrapper");
+                        bundleWrapper.classList.add("bundle-wrapper");
+                        const showHideElements = renderShowHideLinks();
+                        bundleWrapper.appendChild(showHideElements['bShow']);
+                        bundleWrapper.appendChild(showHideElements['bHide']);
+
+                        const selectionArray = productData['quick_selection_array'];
+
+                        for (const key in selectionArray) {
+
+                            const bundleSelection = document.createElement("div");
+                            let qty = 1;
+                            let activeQty = 1;
+                            bundleSelection.classList.add("quick-order-selection");
+                            bundleSelection.classList.add("bundle-selection");
+                            bundleSelection.style.display = "none"
+
+                            const select = document.createElement("select");
+                            select.setAttribute('multiple', '');
+                            const activeSelectionsArray = productData['active_selections'];
+                            let inputType;
+                            let selectionCanChangeQty;
+                            let require;
+
+                            let i = 1;
+                            selectionArray[key].forEach(value => {
+                                qty = 1;
+                                if (i === 1) {
+                                    require = value['required']
+                                    const bundleSelectionText = document.createTextNode(value['title']);
+                                    const bundleSelectionName = document.createElement("p");
+                                    bundleSelectionName.appendChild(bundleSelectionText);
+
+                                    if (require === "1") {
+                                        const spanRequire = document.createElement('span');
+                                        spanRequire.textContent = " *";
+                                        spanRequire.classList.add('required');
+                                        bundleSelectionName.appendChild(spanRequire);
+                                    }
+
+                                    bundleSelection.appendChild(bundleSelectionName);
+
+                                }
+                                inputType = value['type'];
+
+                                if (value['type'] === 'radio' || value['type'] === 'checkbox') {
+                                    const input = document.createElement("input");
+                                    input.setAttribute('type', value['type']);
+                                    input.setAttribute('id', value['selection_id']);
+                                    input.setAttribute('name', key);
+
+                                    const filteredActiveSelectionsArray = activeSelectionsArray.filter(item => item.id === parseInt(value['option_id']));
+
+                                    if (Array.isArray(filteredActiveSelectionsArray[0]['selection_value'])) {
+                                        filteredActiveSelectionsArray[0]['selection_value'].forEach(selectionValue => {
+                                            if (parseInt(selectionValue['value_id']) === parseInt(value['selection_id']) && selectionValue['value'] === true) {
+                                                input.setAttribute('checked', 'checked');
+                                                activeQty = selectionValue['qty'];
+                                                selectionCanChangeQty = selectionValue['change_qty'];
+                                            }
+                                        })
+                                    }
+
+                                    input.value = value['selection_id'];
+                                    bundleSelection.appendChild(input);
+                                    const label = document.createElement("label");
+                                    label.setAttribute('for', value['selection_id']);
+
+                                    let bundleLabelText = document.createTextNode(value['product_name']);
+                                    if (value['type'] === 'checkbox') {
+                                        bundleLabelText = document.createTextNode(qty + ' + ' + value['product_name']);
+                                    }
+
+                                    label.appendChild(bundleLabelText);
+                                    const plus = document.createTextNode(" + ");
+                                    const span = document.createElement("span");
+                                    label.appendChild(plus);
+                                    const bundlePrice = document.createTextNode(productData['currency_symbol'] + value['base_price'].toFixed(2));
+                                    span.appendChild(bundlePrice);
+                                    label.appendChild(span);
+                                    bundleSelection.appendChild(label);
+                                    const br = document.createElement("br");
+                                    bundleSelection.appendChild(br);
+
+                                } else {
+                                    let optionSelect = document.createElement("option");
+                                    optionSelect.value = value['selection_id'];
+
+                                    const filteredActiveSelectionsArray = activeSelectionsArray.filter(item => item.id === parseInt(value['option_id']));
+                                    if (Array.isArray(filteredActiveSelectionsArray[0]['selection_value'])) {
+                                        filteredActiveSelectionsArray[0]['selection_value'].forEach(selectionValue => {
+                                            if (parseInt(selectionValue['value_id']) === parseInt(value['selection_id']) && selectionValue['value'] === true) {
+                                                optionSelect.selected = true;
+                                            }
+                                            if (parseInt(selectionValue['value_id']) === parseInt(value['selection_id'])) {
+                                                qty = selectionValue['qty'];
+                                            }
+                                        })
+                                    }
+
+                                    optionSelect.text = qty + ' + ' + value['product_name'] + " + " + productData['currency_symbol'] + value['base_price'].toFixed(2);
+
+                                    select.setAttribute('name', key);
+                                    select.appendChild(optionSelect);
+                                }
+                                i++;
+                            });
+
+                            bundleSelection.setAttribute('data-option-required', require);
+
+                            if (select.options.length > 0) {
+                                bundleSelection.appendChild(select);
+                            }
+                            const errorDiv = document.createElement('div');
+                            errorDiv.classList.add("error");
+                            bundleSelection.appendChild(errorDiv);
+                            if (inputType === 'radio') {
+
+                                const quantityText = document.createTextNode("Quantity");
+                                const quantityTag = document.createElement("span");
+                                if (selectionCanChangeQty === '0') {
+                                    quantityTag.disabled = true;
+                                }
+                                quantityTag.appendChild(quantityText);
+                                quantityTag.classList.add("bundle-qty-text");
+                                bundleSelection.appendChild(quantityTag);
+
+
+                                const input = document.createElement("input");
+                                input.setAttribute('type', 'text');
+                                input.setAttribute('onkeypress', "return /[0-99999]/i.test(event.key)");
+                                input.setAttribute('value', activeQty);
+                                input.classList.add("bundle-qty");
+                                if (selectionCanChangeQty === '0') {
+                                    input.disabled = true;
+                                }
+                                bundleSelection.appendChild(input);
+                            }
+
+                            bundleWrapper.appendChild(bundleSelection);
+                        }
+
+                        div.appendChild(bundleWrapper);
+                    } else if (productData['type_id'] === 'grouped') {
+
+                        const groupedWrapper = document.createElement("div");
+                        groupedWrapper.classList.add("quick-order-wrapper");
+                        groupedWrapper.classList.add("grouped-wrapper");
+
+                        const showHideElements = renderShowHideLinks();
+                        groupedWrapper.appendChild(showHideElements['bShow']);
+                        groupedWrapper.appendChild(showHideElements['bHide']);
+
+                        const groupedArray = productData['quick_grouped_products'];
+
+                        groupedArray.forEach(value => {
+                            const groupedSelection = document.createElement("div");
+                            groupedSelection.classList.add("quick-order-selection");
+                            groupedSelection.classList.add("grouped-selection");
+                            groupedSelection.style.display = "none"
+                            const divGroupedImg = document.createElement("div");
+                            const divGroupedLink = document.createElement("div");
+                            const divGroupedPrice = document.createElement("div");
+                            const divGroupedQty = document.createElement("div");
+                            divGroupedQty.classList.add("grouped-qty-text");
+
+                            const image = document.createElement('img');
+                            image.src = value["thumbnail"];
+                            divGroupedImg.appendChild(image);
+                            divGroupedImg.classList.add("grouped-image");
+                            groupedSelection.appendChild(divGroupedImg);
+                            const groupedSelectionText = document.createTextNode(value['name']);
+                            const a = document.createElement('a');
+                            a.appendChild(groupedSelectionText);
+
+                            a.href = productData["product_url"];
+                            divGroupedLink.appendChild(a);
+                            groupedSelection.appendChild(divGroupedLink);
+                            const bundlePrice = document.createTextNode(productData['currency_symbol'] + parseFloat(checkAndApplyTierPrice(value['converted_new_price_value'], value['qty'], value)).toFixed(2));
+                            divGroupedPrice.appendChild(bundlePrice);
+                            groupedSelection.appendChild(divGroupedPrice);
+
+                            let qty = 0;
+                            const filteredActiveSelectionsArray = productData['active_selections'].filter(item => parseInt(item.id) === parseInt(value['entity_id']));
+                            if (filteredActiveSelectionsArray.length > 0) {
+                                filteredActiveSelectionsArray.forEach(filteredSelectionArrayInner => {
+                                    qty = parseInt(filteredSelectionArrayInner['qty']);
+                                })
+                            }
+
+                            if(value['tier_price'].length > 0) {
+                                const regularPriceSpan = document.createElement('span');
+                                const regularPriceSpanText = document.createTextNode("Regular Price " + productData['currency_symbol'] + value['price'].toFixed(2));
+                                regularPriceSpan.appendChild(regularPriceSpanText);
+                                regularPriceSpan.appendChild(document.createElement('br'));
+                                divGroupedQty.appendChild(regularPriceSpan);
+                            }
+
+
+                            const quantityText = document.createTextNode("Quantity");
+                            divGroupedQty.appendChild(quantityText);
+                            groupedSelection.appendChild(divGroupedQty);
+
+                            const input = document.createElement("input");
+                            input.setAttribute('type', 'text');
+                            input.setAttribute('onkeypress', "return /[0-99999]/i.test(event.key)");
+                            input.setAttribute('value', qty);
+
+                            input.classList.add("grouped-qty");
+                            input.setAttribute('name', value['entity_id']);
+                            groupedSelection.appendChild(input);
+                            groupedWrapper.appendChild(groupedSelection);
+                        });
+                        div.appendChild(groupedWrapper);
+                    }
+
+                    const inputsToRender = renderCustomOptions(productData);
+                    if (inputsToRender !== undefined) {
+                        inputsToRender.forEach(function (inputToRender) {
+                            div.appendChild(inputToRender);
+                        })
+                    }
+                } else if (field === 'sku') {
+                    div.classList.add("item-sku");
+                    div.innerHTML = productData[field];
+                } else if (field === 'stock') {
+                    const divWrap = document.createElement("div");
+                    if (productData['type_id'] !== 'grouped' && productData['type_id'] !== 'downloadable') {
+                        divWrap.classList.add("item-qty-wrap");
+                        input.setAttribute('type', 'text');
+                        input.setAttribute('value', productData['qty']);
+                        input.classList.add("ordered-qty");
+                        input.setAttribute('onkeypress', "return /[0-99999]/i.test(event.key)");
+
+                        const minusSpan = document.createElement("span");
+                        minusSpan.classList.add("minus-btn");
+                        const minusText = document.createTextNode("-");
+                        const plusSpan = document.createElement("span");
+                        plusSpan.classList.add("plus-btn");
+                        const plusText = document.createTextNode("+");
+                        minusSpan.appendChild(minusText);
+                        plusSpan.appendChild(plusText);
+                        divWrap.appendChild(minusSpan);
+                        divWrap.appendChild(input);
+                        divWrap.appendChild(plusSpan);
+                    }
+                    div.appendChild(divWrap);
+                    div.classList.add("item-qty");
+
+                } else if (field === 'price') {
+                    div.classList.add("item-price");
+                    const divQty = document.createElement("div");
+                    if (productData['type_id'] === 'bundle') {
+                        divQty.innerHTML = productData['currency_symbol'] + (productData['qty'] * getPriceForBundleProduct(productData['pid'])).toFixed(2);
+                    } if (productData['type_id'] === 'grouped') {
+                        divQty.innerHTML = productData['currency_symbol'] + (getPriceForGroupedProduct(productData['pid']) * productData['qty']).toFixed(2);
+                    } else {
+                        divQty.innerHTML = productData['currency_symbol'] + getPrice(productData).toFixed(2);
+                    }
+                    div.appendChild(divQty);
+                    div.appendChild(getTierPriceBlock(productData));
+                } else {
+                    div.classList.add("item-action");
+                    div.innerHTML = productData[field];
+                }
+
+                li.appendChild(div);
+            });
+            li.setAttribute('data-pid', productData['pid'])
+
+            const a = document.createElement('a');
+            const linkText = document.createTextNode("Delete");
+            a.appendChild(linkText);
+            a.href = "#";
+            a.classList.add("delete-item");
+            div.appendChild(a);
+            li.appendChild(div);
+            list.appendChild(li);
+        }
+
+        function getTierPriceBlock(productData) {
+            const divTierPrices = document.createElement("div");
+            let tierPriceStringTotal;
+
+            if (productData['active_product'] && productData['type_id'] === 'configurable' ) {
+                tierPriceStringTotal = getTierPriceString(productData['active_product']['tier_price'], productData);
+            } else if (productData['type_id'] === 'bundle'){
+                tierPriceStringTotal = getTierPriceBundleString(productData['tier_price']);
+            }
+            else if (productData['tier_price']) {
+                tierPriceStringTotal = getTierPriceString(productData['tier_price'], productData);
+            }
+
+            divTierPrices.innerHTML = tierPriceStringTotal;
+
+            return divTierPrices;
+        }
+
+        function getTierPriceString(tierPricesArr, productData) {
+            let tierPriceString = '<br>';
+            tierPricesArr.forEach(value => {
+                tierPriceString = tierPriceString + "Buy " + parseInt(value['price_qty']) + " for " + productData['currency_symbol'] + parseInt(value['price']).toFixed(2) + "<br>";
+            })
+
+            return tierPriceString;
+        }
+        function getTierPriceBundleString(tierPricesArr) {
+            let tierPriceString = '<br>';
+            tierPricesArr.forEach(value => {
+                tierPriceString = tierPriceString + "Buy " + parseInt(value['price_qty']) + " with " +  parseFloat(value['percentage_value']) + "% for each<br>";
+            })
+
+            return tierPriceString;
+        }
+
+        function getDataFromQuickOrderLocalStorage() {
+            let data = localStorage.getItem("quick_order_local_storage");
+            if (data === null) {
+                return [];
+            }
+            return JSON.parse(data);
+        }
+
+        function getDataFromQuickOrderLocalStorageByPid(pid) {
+            let productData = null;
+            const productsList = getDataFromQuickOrderLocalStorage();
+
+            productsList.forEach(product => {
+                if (product['pid'] === parseInt(pid)) {
+                    productData = product;
+                }
+            });
+
+            return productData;
+        }
+
+        function addDataToQuickOrderLocalStorage(productData) {
+            let productDataFromLocalStorage = getDataFromQuickOrderLocalStorage();
+            productDataFromLocalStorage.push(productData);
+            localStorage.setItem("quick_order_local_storage", JSON.stringify(productDataFromLocalStorage));
+        }
+
+        function updateDataInQuickOrderLocalStorage(pid, field, value) {
+            let productDataFromLocalStorage = getDataFromQuickOrderLocalStorage();
+            let productDataFromLocalStorageUpdated = [];
+
+            productDataFromLocalStorage.forEach(function (product) {
+                if (product['pid'] === parseInt(pid)) {
+                    product[field] = value;
+                }
+                productDataFromLocalStorageUpdated.push(product)
+            });
+
+            localStorage.setItem("quick_order_local_storage", JSON.stringify(productDataFromLocalStorageUpdated));
+        }
+
+        function addEventListenerForDeleteLink() {
+            const deleteLinks = document.querySelectorAll('.delete-item');
+            deleteLinks.forEach(function (link) {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const clickedElement = event.target;
+                    if (clickedElement && clickedElement.nodeType === 1) {
+                        const parentElement = clickedElement.closest('[data-pid]');
+                        const pid = parentElement.getAttribute('data-pid');
+                        parentElement.remove();
+                        removeItemFromStorage(pid);
+                    }
+                });
+            });
+        }
+
+        function addEventListenerForQtyButtons() {
+            const plusButtons = document.querySelectorAll('.plus-btn');
+            plusButtons.forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    const clickedElement = event.target;
+                    if (clickedElement && clickedElement.nodeType === 1) {
+                        const qtyField = clickedElement.previousElementSibling;
+                        qtyField.value = parseInt(qtyField.value) + 1;
+                        updateQtyInStorage(clickedElement, qtyField.value);
+                        updatePriceForConfigurableBundle(clickedElement);
+                    }
+                });
+            });
+
+            const minusButtons = document.querySelectorAll('.minus-btn');
+            minusButtons.forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    const clickedElement = event.target;
+
+                    if (clickedElement && clickedElement.nodeType === 1) {
+                        const qtyField = clickedElement.nextElementSibling;
+                        if (qtyField.value > 1) {
+                            qtyField.value = parseInt(qtyField.value) - 1;
+                            updateQtyInStorage(clickedElement, qtyField.value);
+                            updatePriceForConfigurableBundle(clickedElement);
+                        }
+                    }
+                });
+            });
+
+            const qtyInputs = document.querySelectorAll('.item-qty .ordered-qty');
+            qtyInputs.forEach(function (qtyInput) {
+                qtyInput.addEventListener('change', function (event) {
+                    const clickedElement = event.target;
+                    checkEmpty(event);
+                    updatePrice(clickedElement, clickedElement.value);
+                    updateQtyInStorage(clickedElement, clickedElement.value);
+                });
+            });
+        }
+
+        function addEventListenerForAttributeChange() {
+            const attributes = document.querySelectorAll('.item-name .select-wrapper select');
+            attributes.forEach(function (select) {
+                select.addEventListener('change', function () {
+                    const parentBlock = select.closest('.select-wrapper');
+                    const attributesInBlock = parentBlock.querySelectorAll('select');
+                    const selectedOptions = [];
+                    attributesInBlock.forEach(select => {
+                        const selectedOption = select.options[select.selectedIndex];
+                        selectedOptions.push({
+                            code: select.dataset.attribute_code,
+                            value: selectedOption.value
+                        });
+                    });
+
+                    const parentElement = select.closest('[data-pid]');
+                    const pid = parentElement.getAttribute('data-pid');
+                    const product = getDataFromQuickOrderLocalStorageByPid(pid);
+                    const usedProducts = product['used_products'];
+
+                    let activeProduct = null;
+
+                    usedProducts.forEach(usedProduct => {
+                        let counter = 0;
+                        selectedOptions.forEach(selectedOption => {
+                            if (usedProduct[selectedOption['code']] === selectedOption['value']) {
+                                counter++;
+                            }
+                        });
+                        if (counter === selectedOptions.length) {
+                            activeProduct = usedProduct;
+                        }
+                    });
+                    const imageBlock = parentElement.querySelector('.item-image');
+                    const imgNew = document.createElement('img');
+                    imgNew.src = activeProduct.thumbnail;
+                    const image = imageBlock.querySelector('img');
+                    imageBlock.replaceChild(imgNew, image);
+
+                    const productFromStorage = getDataFromQuickOrderLocalStorageByPid(pid);
+                    productFromStorage['active_product'] = activeProduct;
+                    updateDataInQuickOrderLocalStorage(pid, 'active_product', activeProduct);
+                    updateDataInQuickOrderLocalStorage(pid, 'price', activeProduct['price']);
+                    updatePriceForConfigurableBundle(select);
+                });
+            });
+        }
+
+        function addEventListenerForGroupedSelectionChange() {
+
+            const inputsText = document.querySelectorAll('.item-name .grouped-wrapper input[type="text"]');
+            inputsText.forEach(function (inputText) {
+                inputText.addEventListener('change', function (event) {
+                    checkEmptyZero(event);
+                    updateGroupedSelectionChange(inputText, false);
+                });
+            });
+        }
+
+        function addEventListenerForBundleSelectionChange() {
+            const inputs = document.querySelectorAll('.item-name .bundle-wrapper input[type="radio"], .item-name .bundle-wrapper input[type="checkbox"], .item-name .bundle-wrapper select');
+            inputs.forEach(function (input) {
+                input.addEventListener('change', function () {
+                    updateBundleSelectionChange(input);
+                });
+            });
+        }
+
+        function addEventListenerForBundleSelectionQtyChange() {
+            const inputs = document.querySelectorAll('.item-name .bundle-wrapper .bundle-qty');
+            inputs.forEach(function (input) {
+                input.addEventListener('change', function () {
+                    updateBundleSelectionChange(input, false);
+                });
+            });
+        }
+
+        function updateBundleSelectionChange(input, updateQtyField = true) {
+            const parentElement = input.closest('[data-pid]');
+            const pid = parentElement.getAttribute('data-pid');
+            const product = getDataFromQuickOrderLocalStorageByPid(pid);
+            const parentBlock = input.closest('.bundle-selection');
+            const selectedSelection = {};
+            let qty;
+            let price;
+
+            const options = parentBlock.querySelectorAll('input[type="radio"], input[type="checkbox"], select');
+
+            if (updateQtyField === true && input['type'] === 'radio') {
+
+                const qtyCanChange = getQtyByInputId(product, input['id'], input['name']);
+                const qtyInput = parentBlock.querySelector('.bundle-qty');
+                qty = qtyCanChange.qty;
+                qtyInput.value = qty;
+
+                if (qtyCanChange.selectionCanChangeQty === "0") {
+                    qtyInput.disabled = true;
+                } else {
+                    qtyInput.disabled = false;
+                }
+            }
+
+            let selectedSelectionIdTemp;
+            let selectedSelectionValueTemp = [];
+
+            if (options.length > 0 && options[0]['type'] !== 'select-multiple') {
+                options.forEach(function (option) {
+                    let Obj = {};
+                    selectedSelectionIdTemp = options[0].name;
+                    Obj.value_id = option.value;
+                    Obj.value = !!option.checked;
+                    if (updateQtyField === false && option.checked) {
+                        Obj.qty = input['value'];
+                    } else {
+                        Obj.qty = getQtyByInputId(product, option['id'], option['name']).qty;
+                        Obj.change_qty = getQtyByInputId(product, option['id'], option['name']).selectionCanChangeQty;
+                    }
+                    selectedSelectionValueTemp.push(Obj);
+                });
+            } else {
+                const select = parentBlock.querySelector('select');
+                Array.from(select.options).forEach(function (option) {
+                    let Obj = {};
+                    selectedSelectionIdTemp = options[0].name;
+                    Obj.value_id = option.value;
+                    Obj.value = !!option.selected;
+                    if (updateQtyField === false && option.selected) {
+                        Obj.qty = input['value'];
+                    } else {
+                        qty = getQtyByInputId(product, option['value'], options[0].name).qty;
+                        Obj.qty = qty;
+                    }
+                    selectedSelectionValueTemp.push(Obj);
+                });
+            }
+            selectedSelection.id = parseInt(selectedSelectionIdTemp);
+            selectedSelection.selection_value = selectedSelectionValueTemp;
+
+            const newActiveSelections = [];
+            const activeSelections = product['active_selections'];
+
+            activeSelections.forEach(activeSelectionValue => {
+                let active = false;
+                if (parseInt(activeSelectionValue['id']) === parseInt(selectedSelection['id'])) {
+                    active = true;
+                }
+                if (active === false) {
+                    newActiveSelections.push(activeSelectionValue);
+                }
+            });
+
+            newActiveSelections.push(selectedSelection);
+            updateDataInQuickOrderLocalStorage(pid, 'active_selections', newActiveSelections);
+
+            price = getPriceForBundleProduct(pid);
+            parentElement.querySelector('.item-price').innerHTML = product['currency_symbol'] + (product['qty'] * price).toFixed(2);
+            parentElement.querySelector('.item-price').appendChild(getTierPriceBlock(product));
+        }
+
+        function getPriceForGroupedProduct(pid) {
+            const product = getDataFromQuickOrderLocalStorageByPid(pid);
+            const selectionArray = product['quick_grouped_products'];
+            const newActiveSelections = product['active_selections'];
+
+            let price = 0;
+            selectionArray.forEach(value => {
+                newActiveSelections.forEach(newActiveSelection => {
+                    if (parseInt(value['entity_id']) === parseInt(newActiveSelection['id'])) {
+                        price = price + checkAndApplyTierPrice(value['converted_new_price_value'], value['qty'], value) * newActiveSelection['qty'];
+                    }
+                })
+            })
+
+            return price;
+        }
+
+        function getPriceForBundleProduct(pid) {
+            const product = getDataFromQuickOrderLocalStorageByPid(pid);
+            const activeSelections = product['active_selections'];
+            const activeSelectionsQtyMapping = [];
+
+            activeSelections.forEach(activeSelection => {
+                activeSelection['selection_value'].forEach(activeSelectionValue => {
+                    if (activeSelectionValue['value'] === true) {
+                        const Obj = {};
+                        Obj.value_id = activeSelectionValue['value_id'];
+                        Obj.qty = activeSelectionValue['qty'];
+                        activeSelectionsQtyMapping.push(Obj);
+                    }
+                })
+            })
+            const quickSelectionsArray = product['quick_selection_array'];
+            let price = 0;
+            for (const key in quickSelectionsArray) {
+                quickSelectionsArray[key].forEach(selectionArrayInner => {
+
+                    const filteredActiveSelectionsArray = activeSelectionsQtyMapping.filter(item => parseInt(item.value_id) === parseInt(selectionArrayInner['selection_id']));
+                    if (filteredActiveSelectionsArray.length > 0) {
+                        filteredActiveSelectionsArray.forEach(filteredSelectionArrayInner => {
+                            price = price + selectionArrayInner['base_price'].toFixed(2) * filteredSelectionArrayInner['qty'];
+                        })
+                    }
+                })
+            }
+            return price;
+        }
+
+        function getQtyByInputId(product, id, name) {
+            const activeSelectionsArray = product['active_selections'];
+            const filteredActiveSelectionsArray = activeSelectionsArray.filter(item => item.id === parseInt(name));
+            let qty;
+            let selectionCanChangeQty;
+
+            if (Array.isArray(filteredActiveSelectionsArray[0]['selection_value'])) {
+                filteredActiveSelectionsArray[0]['selection_value'].forEach(selectionValue => {
+                    if (parseInt(selectionValue['value_id']) === parseInt(id)) {
+                        qty = selectionValue['qty'];
+                        selectionCanChangeQty = selectionValue['change_qty'];
+                    }
+                })
+            }
+
+            return {
+                qty,
+                selectionCanChangeQty
+            };
+        }
+
+        function updateGroupedSelectionChange(input) {
+            const parentElement = input.closest('[data-pid]');
+            const pid = parentElement.getAttribute('data-pid');
+            const product = getDataFromQuickOrderLocalStorageByPid(pid);
+            const selectedSelection = {id: input.name, qty: input.value};
+            const newActiveSelections = [];
+            const activeSelections = product['active_selections'];
+
+            activeSelections.forEach(activeSelectionValue => {
+                let active = false;
+
+                if (parseInt(activeSelectionValue['id']) === parseInt(selectedSelection['id'])) {
+                    active = true;
+                }
+
+                if (active === false) {
+                    newActiveSelections.push(activeSelectionValue);
+                }
+            });
+
+            newActiveSelections.push(selectedSelection);
+            updateDataInQuickOrderLocalStorage(pid, 'active_selections', newActiveSelections);
+
+            const selectionArray = product['quick_grouped_products'];
+
+            let price = 0;
+            selectionArray.forEach(value => {
+                newActiveSelections.forEach(newActiveSelection => {
+                    if (parseInt(value['entity_id']) === parseInt(newActiveSelection['id'])) {
+                        price = price + checkAndApplyTierPrice(value['converted_new_price_value'], value['qty'], value) * newActiveSelection['qty'];
+                    }
+                })
+            })
+
+            parentElement.querySelector('.item-price').innerHTML = product['currency_symbol'] + (price * product['qty']).toFixed(2);
+        }
+
+        function updatePrice(clickedElement, qty) {
+            const parentElement = clickedElement.closest('[data-pid]');
+            const pid = parentElement.getAttribute('data-pid');
+            const product = getDataFromQuickOrderLocalStorageByPid(pid);
+
+            if (product['price']) {
+                updatePriceValueInList(pid, product['price'], qty, product['currency_symbol']);
+            }
+        }
+
+        function updatePriceValueInList(pid, price, qty, currency_symbol) {
+            const parentElement = document.querySelector(`.quick-order-product-form [data-pid="${pid}"]`);
+            parentElement.querySelector('.item-price').innerHTML = currency_symbol + (price * qty).toFixed(2);
+        }
+
+        function updateQtyInStorage(clickedElement, qty) {
+            const parentElement = clickedElement.closest('[data-pid]');
+            const pid = parentElement.getAttribute('data-pid');
+            const product = getDataFromQuickOrderLocalStorageByPid(pid);
+            if (product['qty']) {
+                updateDataInQuickOrderLocalStorage(pid, 'qty', qty);
+            }
+        }
+
+        function removeItemFromStorage(pid) {
+            let productDataFromLocalStorage = getDataFromQuickOrderLocalStorage();
+            let productDataFromLocalStorageUpdated = [];
+
+            productDataFromLocalStorage.forEach(function (product) {
+                if (product['pid'] !== parseInt(pid)) {
+                    productDataFromLocalStorageUpdated.push(product);
+                }
+            });
+
+            localStorage.setItem("quick_order_local_storage", JSON.stringify(productDataFromLocalStorageUpdated));
+        }
+
+        function checkEmpty(event) {
+            const inputField = event.target;
+            if (inputField.value === "" || inputField.value === "0") {
+                inputField.value = "1";
+            }
+        }
+
+        function checkEmptyZero(event) {
+            const inputField = event.target;
+            if (inputField.value === "") {
+                inputField.value = "0";
+            }
+        }
+
+        function addEventListenerHideShow() {
+            const selectionsBlockLinks = document.querySelectorAll('.item-name .options-details');
+
+            selectionsBlockLinks.forEach(function (selectionsBlockLink) {
+                selectionsBlockLink.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const parentBlock = event.target.closest('.quick-order-wrapper');
+                    parentBlock.querySelector('.hide-details').style.display = "block";
+                    selectionsBlockLink.style.display = "none";
+                    const selectionsBlocks = parentBlock.querySelectorAll('.quick-order-selection');
+                    selectionsBlocks.forEach(function (selectionsBlock) {
+                        selectionsBlock.style.display = "block";
+                    })
+                });
+            });
+
+            const selectionsBlockLinksHide = document.querySelectorAll('.item-name .hide-details');
+
+            selectionsBlockLinksHide.forEach(function (selectionsBlockLink) {
+                selectionsBlockLink.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const parentBlock = event.target.closest('.quick-order-wrapper');
+                    parentBlock.querySelector('.options-details').style.display = "block";
+                    selectionsBlockLink.style.display = "none";
+                    const selectionsBlocks = parentBlock.querySelectorAll('.quick-order-selection');
+                    selectionsBlocks.forEach(function (selectionsBlock) {
+                        selectionsBlock.style.display = "none";
+                    })
+                });
+            });
+        }
+
+        function renderShowHideLinks() {
+            const aShow = document.createElement('a');
+            const linkTextShow = document.createTextNode("Option details...");
+            aShow.appendChild(linkTextShow);
+            aShow.href = "#";
+            aShow.classList.add("options-details");
+            const bShow = document.createElement('b');
+            bShow.appendChild(aShow);
+            const aHide = document.createElement('a');
+            const linkTextHide = document.createTextNode("Hide details");
+            aHide.appendChild(linkTextHide);
+            aHide.href = "#";
+            aHide.classList.add("hide-details");
+            aHide.style.display = "none"
+            const bHide = document.createElement('b');
+            bHide.appendChild(aHide);
+
+            return {'bShow': bShow, 'bHide': bHide}
+        }
+
+        function renderCustomOptions(productData) {
+            if (productData['custom_options'] === undefined) {
+                return;
+            }
+
+            let inputElements = [];
+
+            productData['custom_options'].forEach(function (customOption) {
+                const optionWrap = document.createElement('div');
+                optionWrap.classList.add('option-wrapper');
+                optionWrap.setAttribute('data-option-required', customOption['is_require']);
+                const inputName = document.createElement('p');
+                let price = 0;
+
+                if (customOption['prices']['prices'] !== undefined) {
+                    price = " + " + productData['currency_symbol'] + customOption['prices']['prices']['finalPrice']['amount'].toFixed(2);
+                }
+
+                if (customOption['price'] === null) {
+                    inputName.textContent = customOption['title']
+                } else {
+                    inputName.textContent = customOption['title'] + price;
+                }
+                if (customOption['is_require'] === "1") {
+                    const spanRequire = document.createElement('span');
+                    spanRequire.textContent = " *";
+                    spanRequire.classList.add('required');
+
+                    inputName.appendChild(spanRequire);
+                }
+
+                const inputNote = document.createElement('span');
+                const inputNotes = [];
+                let option;
+
+                switch (customOption['type']) {
+                    case 'field':
+                        optionWrap.classList.add('option-wrapper-field');
+                        option = document.createElement('input');
+                        option.setAttribute('type', 'text');
+                        option.setAttribute('data-option-type', customOption['type']);
+                        option.setAttribute('data-option-id', customOption['option_id']);
+                        option.name = customOption['option_id'];
+                        option = getValueActiveCustomOptions(option, productData, customOption);
+                        inputNote.textContent = "Maximum" + " " + customOption['max_characters'] + " " + "characters";
+                        inputNotes.push(inputNote);
+
+                        break;
+                    case 'area':
+                        optionWrap.classList.add('option-wrapper-area');
+                        option = document.createElement('textarea');
+                        option.name = customOption['option_id'];
+                        option.setAttribute('rows', "4");
+                        option.setAttribute('cols', "50");
+                        option.setAttribute('data-option-type', customOption['type']);
+                        option.setAttribute('data-option-id', customOption['option_id']);
+                        option.setAttribute('maxlength', customOption['max_characters']);
+                        option = getValueActiveCustomOptions(option, productData, customOption);
+                        inputNote.textContent = "Maximum" + " " + customOption['max_characters'] + " " + "characters";
+                        inputNotes.push(inputNote);
+
+                        break;
+                    case 'file':
+                        optionWrap.classList.add('option-wrapper-file');
+                        option = document.createElement('input');
+                        option.setAttribute('type', 'file');
+                        option.setAttribute('data-option-type', customOption['type']);
+                        option.setAttribute('data-option-id', customOption['option_id']);
+                        option.setAttribute('accept', customOption['file_extension']);
+                        option.setAttribute('max_image_size_x', customOption['image_size_x']);
+                        option.setAttribute('max_image_size_y', customOption['image_size_y']);
+                        option = getValueActiveCustomOptions(option, productData, customOption);
+                        const inputNoteCompatible = document.createElement('span');
+                        inputNoteCompatible.textContent = "Compatible file extensions to upload:" + " " + customOption['file_extension'];
+                        inputNotes.push(inputNoteCompatible);
+
+                        if (customOption['image_size_x'] !== '0') {
+                            const inputNoteMaximumX = document.createElement('span');
+                            inputNoteMaximumX.textContent = "Maximum image width:" + " " + customOption['image_size_x'] + " " + "px.";
+                            inputNotes.push(inputNoteMaximumX);
+                        }
+                        if (customOption['image_size_y'] !== '0') {
+                            const inputNoteMaximumY = document.createElement('span');
+                            inputNoteMaximumY.textContent = "Maximum image height:" + " " + customOption['image_size_y'] + " " + "px.";
+                            inputNotes.push(inputNoteMaximumY);
+                        }
+
+                        break;
+                    case 'drop_down':
+                        optionWrap.classList.add('option-wrapper-drop-down');
+                        const select = document.createElement("select");
+                        select.setAttribute('option_id', customOption['option_id']);
+                        select.setAttribute('id', customOption['option_id']);
+                        select.setAttribute('data-option-type', customOption['type']);
+                        select.setAttribute('data-option-id', customOption['option_id']);
+
+                        const optionSelect = document.createElement("option");
+                        optionSelect.value = '';
+                        optionSelect.text = "-- Please Select --";
+
+                        select.appendChild(optionSelect);
+                        Object.entries(customOption['prices']).forEach(([key, valuesItem]) => {
+                            const optionSelect = document.createElement("option");
+                            optionSelect.value = key;
+                            optionSelect.text = valuesItem['name'] + " + " + getFormattedPrice(productData['currency_symbol'], valuesItem, 'finalPrice');
+                            select.appendChild(optionSelect);
+                        });
+                        option = getValueActiveCustomOptions(select, productData, customOption);
+
+                        break;
+                    case 'radio':
+                        optionWrap.classList.add('option-wrapper-radio');
+                        const radioBlock = document.createElement('div');
+
+                        Object.entries(customOption['prices']).forEach(([key, valuesItem]) => {
+                            let radio = document.createElement('input');
+                            radio.setAttribute('type', 'radio');
+                            radio.setAttribute('value', key);
+                            radio.setAttribute('id', key);
+                            radio.setAttribute('name', valuesItem['option_id']);
+                            radio.setAttribute('data-option-type', customOption['type']);
+                            radio.setAttribute('data-option-id', customOption['option_id']);
+
+                            const label = document.createElement('label');
+                            label.setAttribute('for', key);
+                            label.textContent = valuesItem['name'] + " + " + getFormattedPrice(productData['currency_symbol'], valuesItem, 'finalPrice');
+                            radio = getValueActiveCustomOptions(radio, productData, customOption);
+                            radioBlock.appendChild(radio);
+                            radioBlock.appendChild(label);
+                            radioBlock.appendChild(document.createElement('br'));
+                        });
+
+                        option = radioBlock;
+
+                        break;
+                    case 'checkbox':
+                        optionWrap.classList.add('option-wrapper-checkbox');
+                        const checkboxBlock = document.createElement('div');
+
+                        Object.entries(customOption['prices']).forEach(([key, valuesItem]) => {
+                            let checkbox = document.createElement('input');
+                            checkbox.setAttribute('type', 'checkbox');
+                            checkbox.setAttribute('value', key);
+                            checkbox.setAttribute('id', key);
+                            checkbox.setAttribute('data-option-type', customOption['type']);
+                            checkbox.setAttribute('data-option-id', customOption['option_id']);
+
+                            const label = document.createElement('label');
+                            label.setAttribute('for', key);
+                            label.textContent = valuesItem['name'] + " + " + getFormattedPrice(productData['currency_symbol'], valuesItem, 'finalPrice');
+                            checkbox = getValueActiveCustomOptions(checkbox, productData, customOption);
+                            checkboxBlock.appendChild(checkbox);
+                            checkboxBlock.appendChild(label);
+                            checkboxBlock.appendChild(document.createElement('br'));
+                        });
+
+                        option = checkboxBlock;
+
+                        break;
+                    case 'multiple':
+                        optionWrap.classList.add('option-wrapper-multiple');
+                        const selectMultiple = document.createElement("select");
+                        selectMultiple.setAttribute('option_id', customOption['option_id']);
+                        selectMultiple.setAttribute('id', customOption['option_id']);
+                        selectMultiple.setAttribute('multiple', '');
+                        selectMultiple.setAttribute('data-option-type', customOption['type']);
+                        selectMultiple.setAttribute('data-option-id', customOption['option_id']);
+
+
+                        Object.entries(customOption['prices']).forEach(([key, valuesItem]) => {
+                            let optionSelect = document.createElement("option");
+                            optionSelect.value = key;
+                            optionSelect.text = valuesItem['name'] + " + " + getFormattedPrice(productData['currency_symbol'], valuesItem, 'finalPrice');
+
+                            optionSelect.setAttribute('data-option-id', customOption['option_id']);
+                            optionSelect = getValueActiveCustomOptions(optionSelect, productData, customOption);
+                            selectMultiple.appendChild(optionSelect);
+                        });
+
+                        option = selectMultiple;
+
+                        break;
+                    case 'date':
+                        optionWrap.classList.add('option-wrapper-date');
+                        const dateBlock = document.createElement('div');
+
+                        dateBlock.appendChild(getValueActiveCustomOptions(getMonthSelect(customOption), productData, customOption));
+                        dateBlock.appendChild(getValueActiveCustomOptions(getDaysSelect(customOption), productData, customOption));
+                        dateBlock.appendChild(getValueActiveCustomOptions(getYearsSelect(customOption), productData, customOption));
+                        option = dateBlock;
+
+                        break;
+                    case 'date_time':
+                        optionWrap.classList.add('option-wrapper-date-time');
+                        const dateTimeBlock = document.createElement('div');
+                        dateTimeBlock.appendChild(getValueActiveCustomOptions(getMonthSelect(customOption), productData, customOption));
+                        dateTimeBlock.appendChild(getValueActiveCustomOptions(getDaysSelect(customOption), productData, customOption));
+                        dateTimeBlock.appendChild(getValueActiveCustomOptions(getYearsSelect(customOption), productData, customOption));
+                        dateTimeBlock.appendChild(getValueActiveCustomOptions(getHoursSelect(customOption), productData, customOption));
+                        let boldElement = document.createElement('b');
+                        boldElement.textContent = ':';
+                        dateTimeBlock.appendChild(boldElement);
+                        dateTimeBlock.appendChild(getValueActiveCustomOptions(getMinutesSelect(customOption), productData, customOption));
+                        dateTimeBlock.appendChild(getValueActiveCustomOptions(getDayPartSelect(customOption), productData, customOption));
+                        option = dateTimeBlock;
+
+                        break;
+                    case 'time':
+                        optionWrap.classList.add('option-wrapper-time');
+                        const timeBlock = document.createElement('div');
+                        timeBlock.appendChild(getValueActiveCustomOptions(getHoursSelect(customOption), productData, customOption));
+                        let boldElementTime = document.createElement('b');
+                        boldElementTime.textContent = ':';
+                        timeBlock.appendChild(boldElementTime);
+                        timeBlock.appendChild(getValueActiveCustomOptions(getMinutesSelect(customOption), productData, customOption));
+                        timeBlock.appendChild(getValueActiveCustomOptions(getDayPartSelect(customOption), productData, customOption));
+                        option = timeBlock;
+
+                        break;
+                }
+
+                optionWrap.appendChild(inputName);
+                optionWrap.appendChild(option);
+                inputNotes.forEach(function (inputNote) {
+                    const br = document.createElement('br');
+                    optionWrap.appendChild(br);
+                    optionWrap.appendChild(inputNote);
+
+                })
+                if (customOption['type'] === "file") {
+                    const image = document.createElement('img');
+                    image.src = option.src;
+                    image.width = 100;
+                    image.setAttribute('data-option_image_type', option.src.split('.').pop());
+                    optionWrap.appendChild(image);
+                }
+
+                const errorDiv = document.createElement('div');
+                errorDiv.classList.add("error");
+                optionWrap.appendChild(errorDiv);
+
+                inputElements.push(optionWrap);
+
+            })
+
+            return inputElements;
+        }
+
+        function getMonthSelect(customOption) {
+            const monthSelect = getOptionSelect(customOption);
+            monthSelect.setAttribute('data-option-type', customOption['type']);
+            monthSelect.setAttribute('data-option-id', customOption['option_id']);
+            monthSelect.setAttribute('data-option-name', 'month');
+
+            const months = Array.from({length: 12}, (_, i) => i + 1);
+            months.unshift("-");
+            months.forEach(month => {
+                const option = document.createElement("option");
+                if (month !== "-") {
+                    const paddedMonth = month < 10 ? `0${month}` : month;
+                    option.value = month;
+                    option.textContent = paddedMonth.toString();
+                } else {
+                    option.value = '';
+                    option.textContent = month;
+                }
+                monthSelect.appendChild(option);
+            });
+
+            return monthSelect;
+        }
+
+        function getDaysSelect(customOption) {
+            const daySelect = getOptionSelect(customOption);
+            daySelect.setAttribute('data-option-type', customOption['type']);
+            daySelect.setAttribute('data-option-id', customOption['option_id']);
+            daySelect.setAttribute('data-option-name', 'day');
+            const days = Array.from({length: 31}, (_, i) => i + 1);
+            days.unshift("-");
+            days.forEach(day => {
+                const option = document.createElement("option");
+                if (day !== "-") {
+                    const paddedDay = day < 10 ? `0${day}` : day;
+                    option.value = day;
+                    option.textContent = paddedDay.toString();
+                } else {
+                    option.value = '';
+                    option.textContent = day;
+                }
+                daySelect.appendChild(option);
+            });
+
+            return daySelect;
+        }
+
+        function getYearsSelect(customOption) {
+            const yearSelect = getOptionSelect(customOption);
+            yearSelect.setAttribute('data-option-type', customOption['type']);
+            yearSelect.setAttribute('data-option-id', customOption['option_id']);
+            yearSelect.setAttribute('data-option-name', 'year');
+
+            const years = Array.from({length: 1}, (_, i) => i + 1);
+            years.unshift("-");
+
+            years.forEach(year => {
+                const option = document.createElement("option");
+                const currentYear = new Date().getFullYear();
+                if (year !== "-") {
+                    option.value = currentYear;
+                    option.textContent = currentYear.toString();
+                } else {
+                    option.value = '';
+                    option.textContent = year;
+                }
+                yearSelect.appendChild(option);
+            });
+
+            return yearSelect;
+        }
+
+        function getHoursSelect(customOption) {
+            const hourSelect = getOptionSelect(customOption);
+            hourSelect.setAttribute('data-option-type', customOption['type']);
+            hourSelect.setAttribute('data-option-id', customOption['option_id']);
+            hourSelect.setAttribute('data-option-name', 'hour');
+            const hours = Array.from({length: 12}, (_, i) => i + 1);
+            hours.unshift("-");
+
+            hours.forEach(hour => {
+                const option = document.createElement("option");
+                if (hour !== "-") {
+                    const paddedHour = hour < 10 ? `0${hour}` : hour;
+                    option.value = hour;
+                    option.textContent = paddedHour.toString();
+                } else {
+                    option.value = '';
+                    option.textContent = hour;
+                }
+                hourSelect.appendChild(option);
+            });
+
+            return hourSelect;
+        }
+
+        function getMinutesSelect(customOption) {
+            const minuteSelect = getOptionSelect(customOption);
+            minuteSelect.setAttribute('data-option-type', customOption['type']);
+            minuteSelect.setAttribute('data-option-id', customOption['option_id']);
+            minuteSelect.setAttribute('data-option-name', 'minute');
+            const minutes = Array.from({length: 60}, (_, i) => i + 1);
+            minutes.unshift("0");
+            minutes.unshift("-");
+
+            minutes.forEach(hour => {
+                const option = document.createElement("option");
+                if (hour !== "-") {
+                    const paddedHour = hour < 10 ? `0${hour}` : hour;
+                    option.value = hour;
+                    option.textContent = paddedHour.toString();
+                } else {
+                    option.value = '';
+                    option.textContent = hour;
+                }
+                minuteSelect.appendChild(option);
+            });
+
+            return minuteSelect;
+        }
+
+        function getDayPartSelect(customOption) {
+            const dayPartSelect = getOptionSelect(customOption);
+            dayPartSelect.setAttribute('data-option-type', customOption['type']);
+            dayPartSelect.setAttribute('data-option-id', customOption['option_id']);
+            dayPartSelect.setAttribute('data-option-name', 'day_part');
+
+            const optionAm = document.createElement("option");
+            optionAm.value = 'am';
+            optionAm.textContent = 'AM';
+            dayPartSelect.appendChild(optionAm);
+
+            const optionPm = document.createElement("option");
+            optionPm.value = 'pm';
+            optionPm.textContent = 'PM';
+            dayPartSelect.appendChild(optionPm);
+
+            return dayPartSelect;
+        }
+
+        function getOptionSelect(customOption) {
+            const select = document.createElement("select");
+            select.setAttribute('option_id', customOption['option_id']);
+            select.setAttribute('id', customOption['option_id']);
+
+            return select;
+        }
+
+        function getFormattedPrice(currencySymbol, valuesItem, priceType) {
+            return currencySymbol + valuesItem['prices'][priceType]['amount'].toFixed(2);
+        }
+
+        function addEventListenerCustomOptionSelect() {
+            const customOptionFields = [
+                ...document.querySelectorAll('.item-name .option-wrapper select'),
+            ];
+
+            customOptionFields.forEach(function (customOptionField) {
+                const dataOptionType = customOptionField.getAttribute('data-option-type');
+
+                customOptionField.addEventListener('change', function () {
+                    const optionDataObject = {
+                        'option_id': customOptionField.getAttribute('data-option-id'),
+                        'option_type': customOptionField.getAttribute('data-option-type'),
+                        'option_value': customOptionField.value
+                    }
+
+                    if (dataOptionType === "multiple") {
+                        const optionDataObjectData = [];
+                        Array.from(customOptionField.options).forEach(function (element) {
+                            optionDataObjectData.push(
+                                {
+                                    'value_id': element.value,
+                                    'value': element.selected
+                                }
+                            )
+                        })
+
+                        optionDataObject['option_value'] = optionDataObjectData;
+                    } else if (dataOptionType === "date" || dataOptionType === "date_time" || dataOptionType === "time") {
+                        const parentElement = customOptionField.closest('.option-wrapper');
+                        const allElements = parentElement.querySelectorAll(customOptionField.tagName);
+                        const optionDataObjectData = [];
+                        allElements.forEach(function (element) {
+                            optionDataObjectData.push(
+                                {
+                                    'value_id': element.getAttribute('data-option-name'),
+                                    'value': element.value
+
+                                }
+                            )
+                        })
+                        optionDataObject['option_value'] = optionDataObjectData;
+                    }
+
+                    updateCustomOptionsInStorage(customOptionField, optionDataObject);
+                    updatePriceForConfigurableBundle(customOptionField);
+
+                })
+            })
+        }
+
+        function addEventListenerCustomOptionField() {
+            const customOptionFields = [
+                ...document.querySelectorAll('.item-name .option-wrapper input'),
+                ...document.querySelectorAll('.item-name .option-wrapper textarea')
+            ];
+
+            customOptionFields.forEach(function (customOptionField) {
+                customOptionField.addEventListener('change', function (event) {
+
+                    const optionsTypes = ["field", "area", "file", "radio", "checkbox"];
+                    const dataOptionType = customOptionField.getAttribute('data-option-type');
+
+                    if (optionsTypes.includes(dataOptionType)) {
+                        const parentElement = customOptionField.closest('.option-wrapper');
+                        const allElements = parentElement.querySelectorAll(customOptionField.tagName);
+
+                        let optionDataObject = {
+                            'option_id': customOptionField.getAttribute('data-option-id'),
+                            'option_type': customOptionField.getAttribute('data-option-type'),
+                            'option_value': customOptionField.value
+                        };
+
+                        if (dataOptionType === "checkbox") {
+                            const optionDataObjectData = [];
+                            allElements.forEach(function (element) {
+                                optionDataObjectData.push(
+                                    {
+                                        'value_id': element.value,
+                                        'value': element.checked
+                                    }
+                                )
+                            })
+
+                            optionDataObject['option_value'] = optionDataObjectData;
+
+                        } else if (dataOptionType === "file") {
+                            const image = document.createElement('img');
+                            image.width = 100;
+
+                            image.setAttribute('data-option_image_type', event.target.files[0].name.split('.').pop());
+                            const images = parentElement.getElementsByTagName('img');
+                            Array.from(images).forEach(image => {
+                                image.remove();
+                            });
+                            parentElement.appendChild(image);
+                            const file = event.target.files[0];
+                            const reader = new FileReader();
+                            reader.onload = function () {
+                                const formData = new FormData();
+                                formData.append('file', file);
+                                sendFileToServer(formData, image, customOptionField, optionDataObject);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+
+                        updateCustomOptionsInStorage(customOptionField, optionDataObject);
+                        updatePriceForConfigurableBundle(customOptionField);
+                    }
+                })
+            })
+        }
+
+        function getPrice(product) {
+            const allValidOptions = validateCustomOptions(product);
+            return getTotalPriceForCustomOptions(allValidOptions, product);
+        }
+
+        function updatePriceForConfigurableBundle(customOptionField) {
+            const parentElement = customOptionField.closest('[data-pid]');
+            const pid = parentElement.getAttribute('data-pid');
+            const product = getDataFromQuickOrderLocalStorageByPid(pid);
+
+            if(product['type_id'] === 'bundle') {
+                const price = getPriceForBundleProduct(pid);
+                parentElement.querySelector('.item-price').innerHTML = product['currency_symbol'] + (product['qty'] * price).toFixed(2);
+            } else {
+                const allValidOptions = validateCustomOptions(product);
+                const totalPrice = getTotalPriceForCustomOptions(allValidOptions, product);
+                parentElement.querySelector('.item-price').innerHTML = product['currency_symbol'] + totalPrice.toFixed(2);
+            }
+
+            parentElement.querySelector('.item-price').appendChild(getTierPriceBlock(product));
+        }
+
+        function validateCustomOptions(product) {
+            let allValidOptions = [];
+
+            if (product['active_custom_options'].length !== 0) {
+                product['active_custom_options'].forEach(function (activeCustomOption) {
+
+                    let validOptions = [];
+                    if (Array.isArray(activeCustomOption['option_value'])) {
+                        activeCustomOption['option_value'].forEach(function (optionValue) {
+                            if (optionValue['value']) {
+                                let obj = {};
+                                obj.option_id = activeCustomOption['option_id'];
+                                obj.value_id = optionValue['value_id'];
+                                validOptions.push(obj);
+                            }
+                        })
+                    } else {
+                        if (activeCustomOption['option_value']) {
+                            let obj = {};
+                            obj.option_id = activeCustomOption['option_id'];
+                            obj.value_id = activeCustomOption['option_value'];
+                            validOptions.push(obj)
+                        }
+                    }
+                    if (validOptions.length > 0) {
+                        if (activeCustomOption['option_type'] === 'date') {
+                            if (validOptions.length === 3) {
+                                allValidOptions.push(validOptions);
+                            }
+                        } else if (activeCustomOption['option_type'] === 'date_time') {
+                            if (validOptions.length === 6) {
+                                allValidOptions.push(validOptions);
+                            }
+                        } else if (activeCustomOption['option_type'] === 'time') {
+                            if (validOptions.length === 3) {
+                                allValidOptions.push(validOptions);
+                            }
+                        } else {
+                            allValidOptions.push(validOptions);
+                        }
+                    }
+                })
+            }
+
+            return allValidOptions;
+        }
+
+        function getTotalPriceForCustomOptions(allValidOptions, product) {
+            let activeProductPrice;
+
+            if (product['active_product'] !== undefined) {
+                activeProductPrice = product['active_product']['price'];
+            } else {
+                activeProductPrice = product['default_price'];
+            }
+
+            let totalOptionsPrice = 0;
+
+            if (allValidOptions.length > 0) {
+                allValidOptions.forEach(function (validOption) {
+                    product['custom_options'].forEach(function (customOption) {
+                        if (parseInt(customOption['option_id']) === parseInt(validOption[0]['option_id'])) {
+                            if (customOption['prices']['prices'] !== undefined) {
+                                totalOptionsPrice = totalOptionsPrice + customOption['prices']['prices']['finalPrice']['amount'];
+                            } else {
+                                totalOptionsPrice = totalOptionsPrice + customOption['prices'][validOption[0]['value_id']]['prices']['finalPrice']['amount'];
+                            }
+                        }
+                    })
+                })
+            }
+
+            return (parseInt(checkAndApplyTierPrice(activeProductPrice, product['qty'], product)) + totalOptionsPrice) * product['qty'];
+        }
+
+        function checkAndApplyTierPrice(activeProductPrice, qty, product) {
+
+            let tierPrice;
+            if(product['type_id'] === 'configurable'){
+                if (product['active_product'] === undefined || product['active_product']['tier_price'] === undefined) {
+                    return activeProductPrice;
+                }
+
+                tierPrice = product['active_product']['tier_price'];
+            } else {
+                if (product['tier_price'] === undefined) {
+                    return activeProductPrice;
+                }
+
+                tierPrice = product['tier_price'];
+            }
+
+            const filteredTierPrice = tierPrice.filter(item => parseInt(item.price_qty) === parseInt(qty));
+
+            if (filteredTierPrice.length > 0) {
+                filteredTierPrice.forEach(function (tierPrice) {
+                    activeProductPrice = tierPrice['price'];
+                })
+            } else {
+                if (parseInt(qty) === 1) {
+                    return activeProductPrice;
+                }
+
+                const maxPriceQty = Math.max(...tierPrice.map(item => item.price_qty));
+                const topTierPrice = tierPrice.filter(item => parseInt(item.price_qty) === parseInt(maxPriceQty));
+
+                topTierPrice.forEach(function (topTier) {
+                    activeProductPrice = topTier['price'];
+                })
+            }
+
+            return activeProductPrice;
+
+        }
+
+        function updateCustomOptionsInStorage(customOptionField, optionData) {
+            let optionUpdated = false;
+            const activeCustomOptions = [];
+            const parentElement = customOptionField.closest('[data-pid]');
+            const pid = parentElement.getAttribute('data-pid');
+            const product = getDataFromQuickOrderLocalStorageByPid(pid);
+            if (product['active_custom_options'].length !== 0) {
+                product['active_custom_options'].forEach(function (activeCustomOption) {
+                    if (parseInt(activeCustomOption['option_id']) === parseInt(optionData['option_id'])) {
+                        activeCustomOptions.push(optionData)
+                        optionUpdated = true;
+                    } else {
+                        activeCustomOptions.push(activeCustomOption)
+                    }
+                });
+            }
+
+            if (optionUpdated === false) {
+                activeCustomOptions.push(optionData)
+            }
+            updateDataInQuickOrderLocalStorage(pid, 'active_custom_options', activeCustomOptions);
+        }
+
+        function getValueActiveCustomOptions(option, productData, customOption) {
+
+            let activeCustomOptionValue = productData['active_custom_options'].find(obj => obj.option_id === customOption['option_id']);
+            if (activeCustomOptionValue) {
+                if (customOption['type'] === "file") {
+                    option.src = activeCustomOptionValue['option_value'];
+                } else if (customOption['type'] === "radio") {
+                    if (activeCustomOptionValue['option_id'] === option.getAttribute('data-option-id') &&
+                        activeCustomOptionValue['option_value'] === option.getAttribute('value')) {
+                        option.checked = true;
+                    }
+
+                } else if (customOption['type'] === "checkbox") {
+                    if (activeCustomOptionValue['option_id'] === option.getAttribute('data-option-id')) {
+                        activeCustomOptionValue['option_value'].forEach(function (activeOptionValue) {
+                            if (activeOptionValue['value_id'] === option.getAttribute('value') && activeOptionValue['value'] === true) {
+                                option.checked = true;
+                            }
+                        });
+                    }
+
+                } else if (customOption['type'] === "multiple") {
+                    if (activeCustomOptionValue['option_id'] === option.getAttribute('data-option-id')) {
+                        activeCustomOptionValue['option_value'].forEach(function (activeOptionValue) {
+                            if (activeOptionValue['value_id'] === option.getAttribute('value') && activeOptionValue['value'] === true) {
+                                option.selected = 'selected';
+                            }
+                        });
+                    }
+                } else if (customOption['type'] === "date" || customOption['type'] === "date_time" || customOption['type'] === "time") {
+                    if (activeCustomOptionValue['option_id'] === option.getAttribute('data-option-id')) {
+                        activeCustomOptionValue['option_value'].forEach(function (activeOptionValue) {
+                            if (activeOptionValue['value_id'] === option.getAttribute('data-option-name')) {
+                                option.value = activeOptionValue['value'];
+                            }
+                        });
+                    }
+
+                } else {
+                    option.value = activeCustomOptionValue['option_value'];
+                }
+            }
+
+            return option;
+        }
+
+        function addEventListenerAddToCart() {
+
+            const button = document.querySelector('.quick-order-product-form-footer button');
+            button.addEventListener('click', function () {
+
+                const allBlocksValid = [];
+                const blocksToBeValidated = [
+                    ...document.querySelectorAll('.option-wrapper'),
+                    ...document.querySelectorAll('.bundle-selection')
+                ]
+
+                blocksToBeValidated.forEach(function (blockToBeValidated) {
+                    allBlocksValid.push(validateForm(blockToBeValidated));
+                })
+
+                const allTrue = allBlocksValid.every(element => element === true);
+                if (allTrue === true) {
+                    addToCart();
+                }
+            });
+
+        }
+
+        function validateForm(optionWrapperBlock) {
+
+            let isValid = true;
+
+            const itemsInputs = [
+                ...optionWrapperBlock.querySelectorAll('.option-wrapper-field input'),
+                ...optionWrapperBlock.querySelectorAll('.option-wrapper-area textarea'),
+                ...optionWrapperBlock.querySelectorAll('.option-wrapper-multiple select'),
+                ...optionWrapperBlock.querySelectorAll('.bundle-selection select')
+            ];
+
+            itemsInputs.forEach(function (input) {
+                const parentElement = input.closest('.option-wrapper, .bundle-selection');
+                const errorDiv = parentElement.querySelector('.error');
+                if (parentElement.getAttribute('data-option-required') === '1') {
+                    if (input.value.trim() === "") {
+                        errorDiv.textContent = "Field is required.";
+                        isValid = false;
+                    } else {
+                        errorDiv.textContent = "";
+                    }
+                }
+            });
+
+            const images = [
+                ...optionWrapperBlock.querySelectorAll('.option-wrapper-file img'),
+            ];
+
+            images.forEach(function (image) {
+                const parentElement = image.closest('.option-wrapper');
+                const input = parentElement.querySelector('input');
+                const errorDiv = parentElement.querySelector('.error');
+                if (parentElement.getAttribute('data-option-required') === '1') {
+
+                    if (image.getAttribute("src") === '') {
+                        errorDiv.textContent = "No file selected!";
+                        return false;
+                    }
+
+                    const allowedTypes = input.getAttribute("accept").split(',').map(item => item.trim());
+
+                    if (!allowedTypes.includes(image.getAttribute('data-option_image_type'))) {
+                        errorDiv.textContent = "Invalid file type! Please upload:" + input.getAttribute("accept") + " image.";
+                        isValid = false;
+                        return isValid;
+                    }
+
+                    if (image.naturalWidth > input.getAttribute('max_image_size_x')) {
+                        errorDiv.textContent = "File is too large! Please upload a file with the width smaller than: " + input.getAttribute('max_image_size_x') + " px";
+                        isValid = false;
+                        return isValid;
+                    }
+
+                    if (image.naturalHeight > input.getAttribute('max_image_size_y')) {
+                        errorDiv.textContent = "File is too large! Please upload a file with the height smaller than: " + input.getAttribute('max_image_size_y') + " px";
+                        isValid = false;
+                        return isValid;
+                    }
+                    errorDiv.textContent = "";
+
+                    return isValid;
+                }
+            });
+
+
+            const itemsRadioCheckbox = [
+                [optionWrapperBlock.querySelectorAll('.option-wrapper-radio input')],
+                [optionWrapperBlock.querySelectorAll('.option-wrapper-checkbox input')],
+                [optionWrapperBlock.querySelectorAll('.bundle-selection input')]
+            ];
+
+            if (itemsRadioCheckbox.length) {
+                itemsRadioCheckbox.forEach(function (radioCheckboxArrayInner) {
+                    radioCheckboxArrayInner.forEach(function (radioCheckboxArray) {
+                        if (!radioCheckboxArray.length) {
+                            return;
+                        }
+
+                        const radioCheckboxChecked = [];
+                        radioCheckboxArray.forEach(function (radioCheckbox) {
+                            if (radioCheckbox.checked) {
+                                radioCheckboxChecked.push(1)
+                            }
+                        });
+
+                        const parentElement = radioCheckboxArray[0].closest('.option-wrapper, .bundle-selection');
+
+                        if (parentElement.getAttribute('data-option-required') === '1') {
+                            const errorDiv = parentElement.querySelector('.error');
+                            if (radioCheckboxChecked.length === 0) {
+                                errorDiv.textContent = "Field is required.";
+                                isValid = false;
+                            } else {
+                                errorDiv.textContent = "";
+                            }
+                        }
+
+                    })
+                })
+            }
+
+            const itemsSelect = [
+                [optionWrapperBlock.querySelectorAll('.option-wrapper-drop-down select')],
+                [optionWrapperBlock.querySelectorAll('.option-wrapper-date select')],
+                [optionWrapperBlock.querySelectorAll('.option-wrapper-date-time select')],
+                [optionWrapperBlock.querySelectorAll('.option-wrapper-time select')]
+            ];
+
+            if (itemsSelect.length) {
+
+                itemsSelect.forEach(function (selectArrayInner) {
+                    selectArrayInner.forEach(function (selectArray) {
+                        if (!selectArray.length) {
+                            return;
+                        }
+                        const selectSelected = [];
+
+                        selectArray.forEach(function (selectItem) {
+                            if (selectItem.getAttribute('data-option-name' === 'day_part')) {
+                                return;
+                            }
+                            const selectedOption = selectItem.options[selectItem.selectedIndex];
+                            if (selectedOption.value.trim() !== "") {
+                                selectSelected.push(1)
+                            }
+                        })
+
+                        const parentElement = selectArray[0].closest('.option-wrapper');
+                        if (parentElement.getAttribute('data-option-required') === '1') {
+                            const errorDiv = parentElement.querySelector('.error');
+                            if (selectSelected.length < selectArray.length) {
+                                errorDiv.textContent = "Fields are required.";
+                                isValid = false;
+                            } else {
+                                errorDiv.textContent = "";
+                            }
+                        }
+                    })
+                });
+            }
+
+            return isValid;
+        }
+
+        async function addToCart() {
+            let loader = document.querySelector('.quick-order-product-form #loader-wrapper');
+            loader.style.display = "flex";
+            const storedProductData = localStorage.getItem('quick_order_local_storage');
+            const filesUrls = getActiveOptionsFilesUrls();
+
+            const formData = new FormData();
+
+            for (let i = 0; i < filesUrls.length; i++) {
+                const fileResponse = await fetch(filesUrls[i]['option_value']);
+                const fileBlob = await fileResponse.blob();
+                formData.append('options_' + filesUrls[i]['option_id'] + '_file', fileBlob, filesUrls[i]['option_value']);
+            }
+            formData.append('jsonData', storedProductData)
+            if (storedProductData) {
+                fetch(apiAddToCartUrl + '?form_key=' + formKey, {
+                    method: 'POST',
+
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            localStorage.removeItem('quick_order_local_storage');
+                            window.location.href = urlToCartRedirect;
+                        } else {
+                            console.log(data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error adding to cart');
+                    });
+            }
+        }
+
+        function getActiveOptionsFilesUrls() {
+            const urls = [];
+            const storedProductDataJson = localStorage.getItem('quick_order_local_storage');
+            const storedProductData = JSON.parse(storedProductDataJson);
+            storedProductData.forEach(function (products) {
+                products['active_custom_options'].forEach(function (option) {
+                    if (option['option_type'] === 'file') {
+                        const obj = {}
+                        obj['option_id'] = option['option_id'];
+                        obj['option_value'] = option['option_value'];
+                        urls.push(obj);
+                    }
+                })
+            })
+
+            return urls;
+        }
+
+        function sendFileToServer(formData, image, customOptionField, optionDataObject) {
+
+            fetch(uploadFileUrl + '?form_key=' + formKey, {
+                method: 'POST',
+                body: formData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let imageSrc = mediaUrl + data.file_path;
+                        image.src = imageSrc;
+                        optionDataObject['option_value'] = imageSrc;
+                        updateCustomOptionsInStorage(customOptionField, optionDataObject);
+                    } else {
+                        console.error('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error uploading file');
+                });
+        }
+
+        function addEventListeners() {
+            addEventListenerForQtyButtons();
+            addEventListenerForDeleteLink();
+            addEventListenerForAttributeChange();
+            addEventListenerHideShow();
+            addEventListenerCustomOptionField();
+            addEventListenerCustomOptionSelect();
+            addEventListenerForBundleSelectionChange();
+            addEventListenerForBundleSelectionQtyChange();
+            addEventListenerForGroupedSelectionChange();
+        }
+    });
+</script>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+    <module name="BroSolutions_QuickOrder">
+        <sequence>
+            <module name="Magento_Catalog"/>
+            <module name="Magento_Quote"/>
+            <module name="Magento_Framework"/>
+            <module name="Magento_Checkout"/>
+        </sequence>
+    </module>
+</config>
