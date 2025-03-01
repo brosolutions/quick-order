@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="BroSolutions_QuickOrder::css/styles.css"/>
+    </head>
+    <body>
+        <attribute name="class" value="bro-solutions-quick-order"/>
+        <referenceContainer name="content">
+            <block class="BroSolutions\QuickOrder\Block\Quickorder" name="quickorder" template="BroSolutions_QuickOrder::index.phtml"/>
+        </referenceContainer>
+    </body>
+</page>
