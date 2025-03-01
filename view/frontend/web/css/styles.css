@@ -1,0 +1,208 @@
+.bro-solutions-quick-order .autocomplete-container {
+    position: relative;
+    width: 300px;
+}
+
+.bro-solutions-quick-order .autocomplete-container p {
+    margin-bottom: 0.3rem;
+}
+
+.bro-solutions-quick-order input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.bro-solutions-quick-order .autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    background-color: white;
+    z-index: 999;
+    border-radius: 4px;
+}
+
+.bro-solutions-quick-order .autocomplete-suggestion-inner {
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    position: relative;
+}
+
+.bro-solutions-quick-order .autocomplete-suggestion-inner .image-wrap {
+    width: 70px;
+    margin-right: 15px;
+}
+
+.bro-solutions-quick-order .autocomplete-suggestion-inner .image-wrap image {
+    width: 100%;
+}
+
+.bro-solutions-quick-order .autocomplete-suggestion-inner .text-wrap {
+    width: 200px;
+}
+
+.bro-solutions-quick-order .autocomplete-suggestion:hover {
+    background-color: #f0f0f0;
+}
+
+.bro-solutions-quick-order .loading {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    margin-top: 8px;
+    border: 2px solid #ccc;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.bro-solutions-quick-order .autocomplete-container p.no-result {
+    margin-top: 1rem;
+    margin-left: 1rem;
+    margin-bottom: 1rem;
+}
+
+#fast-product-list {
+    margin: 0;
+    padding: 0;
+}
+
+#fast-product-list li {
+    display: flex;
+    padding: 8px;
+    border: 1px solid #ddd;
+}
+
+#fast-product-list li div img {
+    max-width: 70%;
+    display: block;
+}
+
+#fast-product-list li > div {
+    text-align: left;
+    width: 14%;
+    padding: 2px 0;
+}
+
+#fast-product-list li > div:nth-child(2) {
+    width: 30%;
+}
+
+#fast-product-list li div.item-qty .item-qty-wrap {
+    min-width: 60%;
+    margin: 0 auto;
+}
+
+#fast-product-list li div.item-qty .ordered-qty {
+    font-size: 1.4rem;
+    width: 30px
+}
+
+#fast-product-list li div.item-qty .minus-btn,
+#fast-product-list li div.item-qty .plus-btn {
+    cursor: pointer;
+    margin: 0 3px
+}
+
+#fast-product-list li div.item-name p {
+    font-weight: bold;
+}
+
+#fast-product-list li div.item-name .bundle-wrapper .bundle-selection,
+#fast-product-list li div.item-name .grouped-wrapper .grouped-selection {
+    padding: 10px 0;
+}
+
+#fast-product-list li div.item-name .bundle-wrapper .bundle-selection .bundle-qty-text {
+    display: block;
+    margin-top: 5px;
+}
+
+#fast-product-list li div.item-name .bundle-qty,
+#fast-product-list li div.item-name .grouped-qty {
+    width: 60px;
+}
+
+#fast-product-list li div.item-name .required {
+    color: red;
+}
+
+#fast-product-list li .select-wrapper .select-item {
+    padding-top: 10px;
+    width: 45%;
+    margin-right: 5%;
+    float: left;
+    text-align: left;
+}
+
+#fast-product-list li .select-wrapper .select-item select {
+    margin-top: 5px;
+    margin-right: 5px;
+    display: inline-block;
+}
+
+#fast-product-list li .option-wrapper,
+#fast-product-list li .select-wrapper {
+    padding-top: 15px;
+    overflow: hidden;
+}
+
+#fast-product-list li .option-wrapper-date div,
+#fast-product-list li .option-wrapper-date-time div,
+#fast-product-list li .option-wrapper-time div {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+#fast-product-list li .option-wrapper-date div select {
+    display: inline-block;
+    margin-right: 4px;
+}
+
+#fast-product-list .error {
+    color: red;
+    font-size: 12px;
+}
+
+.quick-order-product-form-footer {
+    text-align: right;
+}
+
+
+.quick-order-product-form #loader-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-order-product-form #loader {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+}
+
+ @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

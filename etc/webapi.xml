@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
+	<route method="GET" url="/V1/bro-solutions-quick-search/search-product">
+		<service class="BroSolutions\QuickOrder\Api\SearchProductsManagementInterface" method="getProducts"/>
+		<resources>
+			<resource ref="anonymous"/>
+		</resources>
+	</route>
+    <route method="GET" url="/V1/bro-solutions-quick-search/get-product">
+        <service class="\BroSolutions\QuickOrder\Api\ProductManagementInterface" method="getProduct"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
+<!--    <route method="POST" url="/V1/bro-solutions-quick-search/add-to-cart">-->
+<!--        <service class="BroSolutions\QuickOrder\Api\CartManagementInterface" method="addToCart"/>-->
+<!--        <resources>-->
+<!--            <resource ref="anonymous"/>-->
+<!--        </resources>-->
+<!--    </route>-->
+</routes>

@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+<!--	<preference for="BroSolutions\QuickOrder\Api\Data\SearchProductsResultsInterface" type="Magento\Framework\Api\SearchResults"/>-->
+	<preference for="BroSolutions\QuickOrder\Api\SearchProductsManagementInterface" type="BroSolutions\QuickOrder\Model\SearchProductsManagement"/>
+    <preference for="BroSolutions\QuickOrder\Api\ProductManagementInterface" type="BroSolutions\QuickOrder\Model\ProductManagement"/>
+    <preference for="BroSolutions\QuickOrder\Api\CartManagementInterface" type="BroSolutions\QuickOrder\Model\CartManagement"/>
+</config>
