@@ -126,23 +126,13 @@ class Quickorder extends Template
     }
 
     /**
-     * Get image url
-     *
-     * @return string
-     */
-    public function getImageUrl()
-    {
-        return $this->getUrl(). 'pub/media/catalog/product/';
-    }
-
-    /**
      * Get media product path
      *
      * @return string
      */
     public function getMediaProductPath()
     {
-        return $this->_urlBuilder->getBaseUrl(['_type' => UrlInterface::URL_TYPE_MEDIA]) . '/catalog/product/';
+        return $this->getMediaUrl() . '/catalog/product/';
     }
 
     /**
@@ -183,7 +173,7 @@ class Quickorder extends Template
      */
     public function getMediaUrl()
     {
-        return $this->getUrl('pub/media');
+        return $this->storeManager->getStore()->getBaseUrl(UrlInterface::URL_TYPE_MEDIA);
     }
 
     /**

@@ -61,7 +61,7 @@ use Magento\Framework\Escaper;
         const formKey = "<?= $escaper->escapeHtml($block->getFormKey()); ?>";
         const mediaUrl = "<?= $escaper->escapeUrl($block->getMediaUrl()); ?>";
         const urlToCartRedirect = "<?=  $escaper->escapeUrl($block->getUrlToCartRedirect()); ?>";
-        const imageUrl = "<?= $escaper->escapeUrl($block->getImageUrl()); ?>";
+        const imageUrl = "<?= $escaper->escapeUrl($block->getMediaProductPath()); ?>";
         const mediaProductPath = "<?= $escaper->escapeHtml($block->getMediaProductPath()); ?>";
         const storeCode = "<?= $escaper->escapeHtml($block->getStoreCode());  ?>";
         const inputElement = document.getElementById('search-input');
