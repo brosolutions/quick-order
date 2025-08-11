@@ -16,10 +16,13 @@ namespace BroSolutions\QuickOrder\Model;
 use BroSolutions\QuickOrder\Service\GetStoreCurrency;
 use BroSolutions\QuickOrder\Service\GetStoreId;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Block\Product\ImageFactory;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Option\Value;
 use Magento\CatalogInventory\Model\Stock\StockItemRepository;
+use Magento\Framework\App\Area;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
+use Magento\Store\Model\App\Emulation;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use BroSolutions\QuickOrder\Service\GetQuickOrderEnable;
@@ -106,6 +109,16 @@ class ProductManagement implements ProductManagementInterface
     private $currencyCode;
 
     /**
+     * @var ImageFactory
+     */
+    private $imageFactory;
+
+    /**
+     * @var Emulation
+     */
+    private $emulation;
+
+    /**
      * @param CatalogHelper $catalogData
      * @param GetQuickOrderEnable $getQuickOrderEnable
      * @param LoggerInterface $logger
@@ -131,8 +144,11 @@ class ProductManagement implements ProductManagementInterface
         GetStoreCurrency           $getStoreCurrency,
         GetStoreId                 $getStoreId,
         GetCurrencySymbol          $getCurrencySymbol,
-        ConvertCurrency            $convertCurrency
-    ) {
+        ConvertCurrency            $convertCurrency,
+        ImageFactory               $imageFactory,
+        Emulation                  $emulation
+    )
+    {
         $this->catalogData = $catalogData;
         $this->getQuickOrderEnable = $getQuickOrderEnable;
         $this->logger = $logger;
@@ -145,6 +161,8 @@ class ProductManagement implements ProductManagementInterface
         $this->getStoreId = $getStoreId;
         $this->getCurrencySymbol = $getCurrencySymbol;
         $this->convertCurrency = $convertCurrency;
+        $this->imageFactory = $imageFactory;
+        $this->emulation = $emulation;
     }
 
     /**
@@ -154,7 +172,7 @@ class ProductManagement implements ProductManagementInterface
      * @param string $storeCode
      * @return array
      */
-    public function getProduct(string $sku, string $storeCode):array
+    public function getProduct(string $sku, string $storeCode): array
     {
         $productList = [];
         $this->currencyCode = $this->getStoreCurrency->execute($storeCode);
@@ -163,7 +181,11 @@ class ProductManagement implements ProductManagementInterface
             if (!$this->getQuickOrderEnable->execute()) {
                 return $productList;
             }
-
+            $this->emulation->startEnvironmentEmulation(
+                $this->getStoreId->execute($storeCode),
+                Area::AREA_FRONTEND,
+                true
+            );
             $collection = $this->productCollectionFactory->create();
 
             $product = $collection->addAttributeToSelect(["*"])
@@ -180,6 +202,10 @@ class ProductManagement implements ProductManagementInterface
             $productData['currency_code'] = $this->currencyCode;
             $productData['currency_symbol'] = $this->getCurrencySymbol->execute($this->currencyCode);
             $productData['product_url'] = $product->getProductUrl();
+            $productData['thumbnail'] = $product->getProductUrl();
+
+            $productData['thumbnail'] = $this->imageFactory->create($product, 'cart_page_product_thumbnail', [])
+                ->getImageUrl();
 
             if (!empty($productData['price'])) {
                 $price = $this->convertCurrency->execute($productData['price'], $this->currencyCode);
@@ -333,7 +359,7 @@ class ProductManagement implements ProductManagementInterface
                 $e->getTrace()
             );
         }
-
+        $this->emulation->stopEnvironmentEmulation();
         return $productList;
     }
 
@@ -429,6 +455,9 @@ class ProductManagement implements ProductManagementInterface
                 $productArray = $product->toArray();
                 $productArray['stock'] = $this->stockItemRepository->get($product->getId())->getQty();
                 $productArray['price'] = $this->convertCurrency->execute($productArray['price'], $this->currencyCode);
+                $productArray['thumbnail'] = $this->imageFactory->create($product, 'cart_page_product_thumbnail', [])
+                    ->getImageUrl();;
+
                 $data[] = $productArray;
             }
         }

@@ -54,12 +54,24 @@ use Magento\Framework\Escaper;
 
 <script>
     'use strict';
+
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0;i < ca.length;i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' ') c = c.substring(1,c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+        }
+        return null;
+    }
+
     window.addEventListener('DOMContentLoaded', function () {
         const apiSearchProductUrl = "<?= $escaper->escapeUrl($block->getQuickOrderSearchProductUrl()); ?>";
         const apiGetProductUrl = "<?= $escaper->escapeUrl($block->getQuickOrderGetProductUrl()); ?>";
         const apiAddToCartUrl = "<?= $escaper->escapeUrl($block->getAddToCartUrl()); ?>";
         const uploadFileUrl = "<?= $escaper->escapeUrl($block->getUploadFileUrl()); ?>";
-        const formKey = "<?= $escaper->escapeHtml($block->getFormKey()); ?>";
+        const formKey = (typeof hyva === 'object') ? hyva.getFormKey() : getCookie('form_key');
         const mediaUrl = "<?= $escaper->escapeUrl($block->getMediaUrl()); ?>";
         const urlToCartRedirect = "<?=  $escaper->escapeUrl($block->getUrlToCartRedirect()); ?>";
         const mediaProductPath = "<?= $escaper->escapeHtml($block->getMediaProductPath()); ?>";
@@ -223,9 +235,9 @@ use Magento\Framework\Escaper;
                 if (field === 'thumbnail') {
                     if (productData['type_id'] === 'configurable') {
                         const activeProduct = productData['active_product'];
-                        image.src = mediaProductPath + activeProduct[field];
+                        image.src = activeProduct[field];
                     } else {
-                        image.src = mediaProductPath + productData[field];
+                        image.src = productData[field];
                     }
                     div.appendChild(image);
                     div.classList.add("item-image");
