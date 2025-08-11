@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Model;
 
+use Magento\Catalog\Helper\Image as ImageHelper;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Store\Model\StoreManager;
 use Psr\Log\LoggerInterface;
@@ -71,6 +72,11 @@ class SearchProductsManagement implements SearchProductsManagementInterface
     private $getStoreId;
 
     /**
+     * @var ImageHelper
+     */
+    protected $imageHelper;
+
+    /**
      * @param PriceCurrencyInterface $priceCurrency
      * @param StoreManager $storeManager
      * @param GetQuickOrderEnable $getQuickOrderEnable
@@ -79,6 +85,7 @@ class SearchProductsManagement implements SearchProductsManagementInterface
      * @param LoggerInterface $logger
      * @param GetStoreCurrency $getStoreCurrency
      * @param GetStoreId $getStoreId
+     * @param ImageHelper $imageHelper
      */
     public function __construct(
         PriceCurrencyInterface   $priceCurrency,
@@ -88,7 +95,8 @@ class SearchProductsManagement implements SearchProductsManagementInterface
         ProductCollectionFactory $productCollectionFactory,
         LoggerInterface          $logger,
         GetStoreCurrency $getStoreCurrency,
-        GetStoreId $getStoreId
+        GetStoreId $getStoreId,
+        ImageHelper $imageHelper
     ) {
         $this->priceCurrency = $priceCurrency;
         $this->storeManager = $storeManager;
@@ -98,6 +106,7 @@ class SearchProductsManagement implements SearchProductsManagementInterface
         $this->logger = $logger;
         $this->getStoreCurrency = $getStoreCurrency;
         $this->getStoreId = $getStoreId;
+        $this->imageHelper = $imageHelper;
     }
 
     /**
@@ -115,9 +124,16 @@ class SearchProductsManagement implements SearchProductsManagementInterface
             if (!$this->getQuickOrderEnable->execute()) {
                 return $productList;
             }
-
+            $stores = $this->storeManager->getStores();
+            $storeId = null;
+            foreach ($stores as $store) {
+                if ($store->getCode() == $storeCode) {
+                    $storeId = $store->getId();
+                }
+            }
+            $this->storeManager->setCurrentStore($storeId);
             $collection = $this->productCollectionFactory->create();
-            $collection->addAttributeToSelect(["name", "sku", "price", "thumbnail"]);
+            $collection->addAttributeToSelect(["name", "sku", "price", "thumbnail_image"]);
             $collection->addAttributeToFilter([
                 ['attribute' => 'name', 'like' => '%' . $term . '%'],
                 ['attribute' => 'sku', 'like' => '%' . $term . '%']
@@ -146,6 +162,8 @@ class SearchProductsManagement implements SearchProductsManagementInterface
                         $this->getStoreCurrency->execute($storeCode)
                     );
                 }
+                $productData['thumbnail'] = $this->imageHelper
+                    ->init($product, 'product_thumbnail_image')->getUrl();
                 $productList[] = $productData;
             }
         } catch (NoSuchEntityException $e) {

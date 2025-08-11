@@ -21,14 +21,14 @@ use Magento\Framework\Escaper;
  **/
 ?>
 
-<h1>Quick Order</h1>
+<h1><?= $escaper->escapeHtml(__('Quick Order'))?></h1>
 <div class="autocomplete-container">
-    <label for="search-input">Search for items:</label>
-    <input type="text" id="search-input" placeholder="Type to search...">
+    <label for="search-input"><?= $escaper->escapeHtml(__('Search for items:'))?></label>
+    <input type="text" id="search-input" placeholder="<?= $escaper->escapeHtmlAttr(__('Type to search...'))?>">
     <div id="suggestions-container" style="display: none" class="autocomplete-suggestions"></div>
 </div>
 
-<h2>Magento Product Info</h2>
+<h2><?= $escaper->escapeHtml(__('Magento Product Info'))?></h2>
 
 <!-- Product Form -->
 <div class="quick-order-product-form">
@@ -38,16 +38,17 @@ use Magento\Framework\Escaper;
 
     <ul id="fast-product-list">
         <li>
-            <div>Image</div>
-            <div>Product(s)</div>
-            <div>Sku</div>
-            <div>Qty</div>
-            <div>Subtotal</div>
-            <div>Action</div>
+            <div><?= $escaper->escapeHtml(__('Image'))?></div>
+            <div><?= $escaper->escapeHtml(__('Product(s)'))?></div>
+            <div><?= $escaper->escapeHtml(__('Sku'))?></div>
+            <div><?= $escaper->escapeHtml(__('Qty'))?></div>
+            <div><?= $escaper->escapeHtml(__('Subtotal'))?></div>
+            <div><?= $escaper->escapeHtml(__('Action'))?></div>
         </li>
     </ul>
     <div class="quick-order-product-form-footer">
-        <button type="button" class="add-to-cart action primary inline-flex shrink-0 ml-auto  btn btn-primary mt-2 ">Add to cart</button>
+        <button type="button" class="add-to-cart action primary inline-flex shrink-0 ml-auto  btn btn-primary mt-2 "
+        ><?= $escaper->escapeHtml(__('Add to cart'))?></button>
     </div>
 </div>
 
@@ -61,7 +62,6 @@ use Magento\Framework\Escaper;
         const formKey = "<?= $escaper->escapeHtml($block->getFormKey()); ?>";
         const mediaUrl = "<?= $escaper->escapeUrl($block->getMediaUrl()); ?>";
         const urlToCartRedirect = "<?=  $escaper->escapeUrl($block->getUrlToCartRedirect()); ?>";
-        const imageUrl = "<?= $escaper->escapeUrl($block->getMediaProductPath()); ?>";
         const mediaProductPath = "<?= $escaper->escapeHtml($block->getMediaProductPath()); ?>";
         const storeCode = "<?= $escaper->escapeHtml($block->getStoreCode());  ?>";
         const inputElement = document.getElementById('search-input');
@@ -101,7 +101,7 @@ use Magento\Framework\Escaper;
                 displaySuggestions(data);
             } catch (error) {
                 console.error('Error fetching suggestions:', error);
-                suggestionsContainer.innerHTML = '<p>Error loading suggestions</p>';
+                suggestionsContainer.innerHTML = '<p><?= $escaper->escapeJs(__('Error loading suggestions')) ?></p>';
                 removeSpinner(inputElement);
             }
         }
@@ -110,7 +110,7 @@ use Magento\Framework\Escaper;
             suggestionsContainer.innerHTML = '';
 
             if (items.length === 0) {
-                suggestionsContainer.innerHTML = '<p class="no-result">No results found</p>';
+                suggestionsContainer.innerHTML = '<p class="no-result"><?= $escaper->escapeJs(__('No results found')) ?></p>';
                 return;
             }
 
@@ -121,7 +121,7 @@ use Magento\Framework\Escaper;
 
                 const img = document.createElement('img');
 
-                img.src = imageUrl + item.thumbnail;
+                img.src = item.thumbnail;
 
                 const name = document.createElement('p');
                 name.textContent = item.name;
@@ -722,7 +722,7 @@ use Magento\Framework\Escaper;
                     });
                     const imageBlock = parentElement.querySelector('.item-image');
                     const imgNew = document.createElement('img');
-                    imgNew.src = imageUrl + activeProduct.thumbnail;
+                    imgNew.src = activeProduct.thumbnail;
                     const image = imageBlock.querySelector('img');
                     imageBlock.replaceChild(imgNew, image);
 
