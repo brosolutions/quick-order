@@ -37,6 +37,7 @@ use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use BroSolutions\QuickOrder\Service\GetCurrencySymbol;
 use BroSolutions\QuickOrder\Service\ConvertCurrency;
 use Magento\Catalog\Model\Product\Option;
+use Magento\Catalog\Api\ProductAttributeRepositoryInterface;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
@@ -118,6 +119,8 @@ class ProductManagement implements ProductManagementInterface
      */
     private $emulation;
 
+    private $productAttributeRepository;
+
     /**
      * @param CatalogHelper $catalogData
      * @param GetQuickOrderEnable $getQuickOrderEnable
@@ -131,22 +134,26 @@ class ProductManagement implements ProductManagementInterface
      * @param GetStoreId $getStoreId
      * @param GetCurrencySymbol $getCurrencySymbol
      * @param ConvertCurrency $convertCurrency
+     * @param ProductAttributeRepositoryInterface $productAttributeRepository
+     * @param ImageFactory $imageFactory
+     * @param Emulation $emulation
      */
     public function __construct(
-        CatalogHelper              $catalogData,
-        GetQuickOrderEnable        $getQuickOrderEnable,
-        LoggerInterface            $logger,
-        PriceCurrencyInterface     $priceCurrency,
-        ProductCollectionFactory   $productCollectionFactory,
-        ProductRepositoryInterface $productRepository,
-        StockItemRepository        $stockItemRepository,
-        StoreManagerInterface      $storeManagerInterface,
-        GetStoreCurrency           $getStoreCurrency,
-        GetStoreId                 $getStoreId,
-        GetCurrencySymbol          $getCurrencySymbol,
-        ConvertCurrency            $convertCurrency,
-        ImageFactory               $imageFactory,
-        Emulation                  $emulation
+        CatalogHelper                       $catalogData,
+        GetQuickOrderEnable                 $getQuickOrderEnable,
+        LoggerInterface                     $logger,
+        PriceCurrencyInterface              $priceCurrency,
+        ProductCollectionFactory            $productCollectionFactory,
+        ProductRepositoryInterface          $productRepository,
+        StockItemRepository                 $stockItemRepository,
+        StoreManagerInterface               $storeManagerInterface,
+        GetStoreCurrency                    $getStoreCurrency,
+        GetStoreId                          $getStoreId,
+        GetCurrencySymbol                   $getCurrencySymbol,
+        ConvertCurrency                     $convertCurrency,
+        ProductAttributeRepositoryInterface $productAttributeRepository,
+        ImageFactory                        $imageFactory,
+        Emulation                           $emulation
     )
     {
         $this->catalogData = $catalogData;
@@ -162,6 +169,7 @@ class ProductManagement implements ProductManagementInterface
         $this->getCurrencySymbol = $getCurrencySymbol;
         $this->convertCurrency = $convertCurrency;
         $this->imageFactory = $imageFactory;
+        $this->productAttributeRepository = $productAttributeRepository;
         $this->emulation = $emulation;
     }
 
@@ -310,6 +318,9 @@ class ProductManagement implements ProductManagementInterface
                         $activeSelectionsTmp['qty'] = $associatedProduct['qty'];
                         $activeSelections[] = $activeSelectionsTmp;
                         $associatedProductData['qty'] = (int)$associatedProductData['qty'];
+                        $associatedProductData['image'] = $associatedProductData['thumbnail'] = $this->imageFactory
+                            ->create($associatedProduct, 'product_base_image', [])
+                            ->getImageUrl();
                         $listProduct[] = $associatedProductData;
                     }
 
@@ -448,15 +459,16 @@ class ProductManagement implements ProductManagementInterface
     private function getUsedProducts(Product $product): array
     {
         $data = [];
-        $usedProducts = $product->getTypeInstance()->getUsedProducts($product);
+        $imageAttribute = $this->productAttributeRepository->get('image');
+        $usedProducts = $product->getTypeInstance()->getUsedProducts($product, [$imageAttribute->getAttributeId()]);
 
         if (!empty($usedProducts)) {
             foreach ($usedProducts as $product) {
                 $productArray = $product->toArray();
                 $productArray['stock'] = $this->stockItemRepository->get($product->getId())->getQty();
                 $productArray['price'] = $this->convertCurrency->execute($productArray['price'], $this->currencyCode);
-                $productArray['thumbnail'] = $this->imageFactory->create($product, 'cart_page_product_thumbnail', [])
-                    ->getImageUrl();;
+                $productArray['thumbnail'] = $this->imageFactory->create($product, 'product_base_image', [])
+                    ->getImageUrl();
 
                 $data[] = $productArray;
             }

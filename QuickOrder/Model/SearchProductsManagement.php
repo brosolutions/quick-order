@@ -140,8 +140,8 @@ class SearchProductsManagement implements SearchProductsManagementInterface
             $collection = $this->productCollectionFactory->create();
             $collection->addAttributeToSelect(["name", "sku", "price", "thumbnail_image", "small_image"]);
             $collection->addAttributeToFilter([
-                ['attribute' => 'name', 'like' => '%' . $term . '%'],
-                ['attribute' => 'sku', 'like' => '%' . $term . '%']
+                ['attribute' => 'name', 'like' => '%' . trim($term) . '%'],
+                ['attribute' => 'sku', 'like' => '%' . trim($term) . '%']
 
             ]);
 
