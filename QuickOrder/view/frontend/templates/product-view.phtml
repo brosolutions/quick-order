@@ -1,0 +1,28 @@
+<?php
+/**
+ * Copyright (c) 2025 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Quickorder;
+use Magento\Framework\Escaper;
+
+/**
+ * @var Quickorder $block
+ * @var Escaper $escaper
+ **/
+?>
+
+<?php if($block->getCanShowPdp()): ?>
+    <h3><?= $escaper->escapeHtml(__('Quick order'))?></h3>
+    <input type="tel" name="quick_order_telephone" id="id_quick_order_telephone" />
+    <button type="submit" name="quick_order" value="true"><?= $escaper->escapeHtml(__('Call me'))?></button>
+<?php endif; ?>

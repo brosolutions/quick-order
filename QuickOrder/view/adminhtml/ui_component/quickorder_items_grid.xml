@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">quickorder_items_grid.quickorder_items_grid_data_source</item>
+            <item name="deps" xsi:type="string">quickorder_items_grid.quickorder_items_grid_data_source</item>
+        </item>
+        <item name="spinner" xsi:type="string">quickorder_items_columns</item>
+    </argument>
+    <dataSource name="quickorder_items_grid_data_source">
+        <argument name="dataProvider" xsi:type="configurableObject">
+            <argument name="class" xsi:type="string">Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider</argument>
+            <argument name="name" xsi:type="string">quickorder_items_grid_data_source</argument>
+            <argument name="primaryFieldName" xsi:type="string">entity_id</argument>
+            <argument name="requestFieldName" xsi:type="string">entity_id</argument>
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="update_url" xsi:type="url" path="mui/index/render"/>
+                    <item name="component" xsi:type="string">Magento_Ui/js/grid/provider</item>
+                    <item name="storageConfig" xsi:type="array">
+                        <item name="indexField" xsi:type="string">entity_id</item>
+                    </item>
+                </item>
+            </argument>
+        </argument>
+    </dataSource>
+
+    <columns name="quickorder_items_columns">
+        <argument name="data" xsi:type="array">
+            <item name="config" xsi:type="array">
+                <item name="childDefaults" xsi:type="array">
+                    <item name="fieldAction" xsi:type="array">
+                        <item name="provider" xsi:type="string">quickorder_items_grid.quickorder_items_grid.quickorder_items_columns.actions</item>
+                        <item name="target" xsi:type="string">applyAction</item>
+                        <item name="params" xsi:type="array">
+                            <item name="0" xsi:type="string">view</item>
+                            <item name="1" xsi:type="string">${ $.$data.rowIndex }</item>
+                        </item>
+                    </item>
+                </item>
+            </item>
+        </argument>
+        <column name="entity_id">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">ID</label>
+            </settings>
+        </column>
+        <column name="telephone">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Telephone</label>
+            </settings>
+        </column>
+        <column name="sku">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Product SKU</label>
+            </settings>
+        </column>
+        <actionsColumn name="actions" class="BroSolutions\QuickOrder\Ui\Component\Listing\Grid\Column\Action">
+            <settings>
+                <indexField>entity_id</indexField>
+            </settings>
+        </actionsColumn>
+    </columns>
+</listing>

@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Checkout\Controller\Cart\Add">
+        <plugin name="add_to_cart_to_quick_order"
+                type="BroSolutions\QuickOrder\Plugin\Cart\AddPlugin"/>
+    </type>
+</config>

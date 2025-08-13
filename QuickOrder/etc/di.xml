@@ -11,7 +11,33 @@
   -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
 <!--	<preference for="BroSolutions\QuickOrder\Api\Data\SearchProductsResultsInterface" type="Magento\Framework\Api\SearchResults"/>-->
-	<preference for="BroSolutions\QuickOrder\Api\SearchProductsManagementInterface" type="BroSolutions\QuickOrder\Model\SearchProductsManagement"/>
-    <preference for="BroSolutions\QuickOrder\Api\ProductManagementInterface" type="BroSolutions\QuickOrder\Model\ProductManagement"/>
-    <preference for="BroSolutions\QuickOrder\Api\CartManagementInterface" type="BroSolutions\QuickOrder\Model\CartManagement"/>
+	<preference for="BroSolutions\QuickOrder\Api\SearchProductsManagementInterface"
+                type="BroSolutions\QuickOrder\Model\SearchProductsManagement"/>
+    <preference for="BroSolutions\QuickOrder\Api\ProductManagementInterface"
+                type="BroSolutions\QuickOrder\Model\ProductManagement"/>
+    <preference for="BroSolutions\QuickOrder\Api\CartManagementInterface"
+                type="BroSolutions\QuickOrder\Model\CartManagement"/>
+
+    <preference for="BroSolutions\QuickOrder\Api\QuickOrderRepositoryInterface"
+                type="BroSolutions\QuickOrder\Model\QuickOrderRepository"/>
+    <preference for="BroSolutions\QuickOrder\Api\Data\QuickOrderInterface"
+                type="BroSolutions\QuickOrder\Model\QuickOrder"/>
+
+
+    <type name="BroSolutions\QuickOrder\Model\ResourceModel\QuickOrder\Grid\Collection">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">bro_quick_orders</argument>
+            <argument name="eventPrefix" xsi:type="string">bro_quick_orders_grid_collection</argument>
+            <argument name="eventObject" xsi:type="string">bro_quick_orders_records_collection</argument>
+            <argument name="resourceModel" xsi:type="string">BroSolutions\QuickOrder\Model\ResourceModel\QuickOrder</argument>
+        </arguments>
+    </type>
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="quickorder_items_grid_data_source"
+                      xsi:type="string">BroSolutions\QuickOrder\Model\ResourceModel\QuickOrder\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

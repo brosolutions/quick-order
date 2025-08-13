@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Block;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
@@ -27,6 +28,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
  */
 class Quickorder extends Template
 {
+    private const XML_PATH_DISPLAY_ON_PDP = 'brosolution_quick_order/general/enable_pdp';
 
     /**
      * @var StoreManager
@@ -39,6 +41,11 @@ class Quickorder extends Template
     private $formKey;
 
     /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+
+    /**
      * @param Context $context
      * @param StoreManager $storeManager
      * @param FormKey $formKey
@@ -48,11 +55,13 @@ class Quickorder extends Template
         Context $context,
         StoreManager $storeManager,
         FormKey $formKey,
+        ScopeConfigInterface $scopeConfig,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->storeManager = $storeManager;
         $this->formKey = $formKey;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -184,5 +193,13 @@ class Quickorder extends Template
     public function getUrlToCartRedirect()
     {
         return $this->getUrl('checkout/cart');
+    }
+
+    /**
+     * @return bool
+     */
+    public function getCanShowPdp(): bool
+    {
+        return $this->scopeConfig->isSetFlag(self::XML_PATH_DISPLAY_ON_PDP);
     }
 }

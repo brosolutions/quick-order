@@ -1,0 +1,11 @@
+{
+    "bro_quick_orders": {
+        "column": {
+            "entity_id": true,
+            "request_params": true,
+            "product_id": true,
+            "telephone": true,
+            "created_at": true
+        }
+    }
+}

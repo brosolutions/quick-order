@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+
+    <table name="bro_quick_orders" resource="default" engine="innodb" comment="Certificates Table">
+        <column name="entity_id" xsi:type="int" unsigned="true" nullable="false" identity="true" comment="ID"/>
+        <column name="request_params" xsi:type="text" nullable="false" comment="Request Params"/>
+        <column name="product_id" xsi:type="text" nullable="false" comment="Product ID"/>
+        <column name="telephone" xsi:type="varchar" nullable="true" length="30" comment="Telephone"/>
+        <column name="created_at" xsi:type="timestamp" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+    </table>
+</schema>
