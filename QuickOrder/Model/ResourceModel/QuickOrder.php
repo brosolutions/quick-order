@@ -15,8 +15,15 @@ namespace BroSolutions\QuickOrder\Model\ResourceModel;
 
 use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 
+/**
+ * @copyright  Copyright (c) 2025 BroSolutions
+ * @link       https://www.brosolutions.net/
+ */
 class QuickOrder extends AbstractDb
 {
+    /**
+     * @return void
+     */
     protected function _construct()
     {
         $this->_init('bro_quick_orders', 'entity_id');

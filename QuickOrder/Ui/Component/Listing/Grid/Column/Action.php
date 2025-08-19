@@ -18,12 +18,20 @@ use Magento\Framework\View\Element\UiComponent\ContextInterface;
 use Magento\Framework\View\Element\UiComponentFactory;
 use Magento\Ui\Component\Listing\Columns\Column;
 
+/**
+ * @copyright  Copyright (c) 2025 BroSolutions
+ * @link       https://www.brosolutions.net/
+ */
 class Action extends Column
 {
-    /** Url path */
+    /**
+     * @var string
+     */
     const ROW_EDIT_URL = 'quickorder/index/view';
 
-    /** @var UrlInterface */
+    /**
+     * @var UrlInterface
+     */
     protected $_urlBuilder;
 
     /**

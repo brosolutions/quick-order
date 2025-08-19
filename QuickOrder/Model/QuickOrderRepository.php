@@ -21,19 +21,49 @@ use Exception;
 use Magento\Framework\Api\SearchCriteria\CollectionProcessorInterface;
 use Magento\Framework\Api\SearchCriteriaInterface;
 use Magento\Framework\Api\SearchResultsFactory;
+use Magento\Framework\Api\SearchResultsInterface;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Exception\CouldNotDeleteException;
 
-class QuickOrderRepository
+/**
+ * @copyright  Copyright (c) 2025 BroSolutions
+ * @link       https://www.brosolutions.net/
+ */
+class QuickOrderRepository implements QuickOrderRepositoryInterface
 {
-
+    /**
+     * @var QuickOrderResource
+     */
     protected $resource;
+
+    /**
+     * @var QuickOrderFactory
+     */
     protected $quickOrderFactory;
+
+    /**
+     * @var CollectionFactory
+     */
     protected $collectionFactory;
+
+    /**
+     * @var SearchResultsFactory
+     */
     protected $searchResultsFactory;
+
+    /**
+     * @var CollectionProcessorInterface
+     */
     protected $collectionProcessor;
 
+    /**
+     * @param QuickOrderResource $resource
+     * @param QuickOrderFactory $quickOrderFactory
+     * @param CollectionFactory $collectionFactory
+     * @param SearchResultsFactory $searchResultsFactory
+     * @param CollectionProcessorInterface $collectionProcessor
+     */
     public function __construct(
         QuickOrderResource           $resource,
         QuickOrderFactory            $quickOrderFactory,
@@ -48,6 +78,11 @@ class QuickOrderRepository
         $this->collectionProcessor = $collectionProcessor;
     }
 
+    /**
+     * @param QuickOrderInterface $quickOrder
+     * @return QuickOrderInterface
+     * @throws CouldNotSaveException
+     */
     public function save(QuickOrderInterface $quickOrder): QuickOrderInterface
     {
         try {
@@ -58,6 +93,11 @@ class QuickOrderRepository
         return $quickOrder;
     }
 
+    /**
+     * @param $id
+     * @return QuickOrderInterface
+     * @throws NoSuchEntityException
+     */
     public function getById($id): QuickOrderInterface
     {
         $quickOrder = $this->quickOrderFactory->create();
@@ -68,7 +108,11 @@ class QuickOrderRepository
         return $quickOrder;
     }
 
-    public function getList(SearchCriteriaInterface $searchCriteria)
+    /**
+     * @param SearchCriteriaInterface $searchCriteria
+     * @return mixed
+     */
+    public function getList(SearchCriteriaInterface $searchCriteria): SearchResultsInterface
     {
         $collection = $this->collectionFactory->create();
         $this->collectionProcessor->process($searchCriteria, $collection);
@@ -80,6 +124,11 @@ class QuickOrderRepository
         return $searchResults;
     }
 
+    /**
+     * @param QuickOrderInterface $quickOrder
+     * @return bool
+     * @throws CouldNotDeleteException
+     */
     public function delete(QuickOrderInterface $quickOrder): bool
     {
         try {
@@ -90,6 +139,12 @@ class QuickOrderRepository
         return true;
     }
 
+    /**
+     * @param $id
+     * @return bool
+     * @throws CouldNotDeleteException
+     * @throws NoSuchEntityException
+     */
     public function deleteById($id): bool
     {
         return $this->delete($this->getById($id));

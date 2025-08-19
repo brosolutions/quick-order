@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Api;
 
-use Vendor\Example\Api\Data\QuickOrderInterface;
+use BroSolutions\QuickOrder\Api\Data\QuickOrderInterface;
 use Magento\Framework\Api\SearchCriteriaInterface;
 use Magento\Framework\Api\SearchResultsInterface;
 

@@ -39,10 +39,19 @@ class AddPlugin
      */
     private $json;
 
+    /**
+     * @var ResponseInterface
+     */
     private $response;
 
+    /**
+     * @var QuickOrderRepository
+     */
     private $quickOrderRepository;
 
+    /**
+     * @var QuickOrderFactory
+     */
     private $quickOrderFactory;
 
     /**
@@ -74,7 +83,7 @@ class AddPlugin
      */
     public function aroundExecute(Add $subject, Closure $proceed): ResponseInterface|ResultInterface
     {
-        $isQuickOrder = $this->request->getParam('quick_order', true);
+        $isQuickOrder = $this->request->getParam('quick_order', false);
         if ($isQuickOrder) {
             $quickOrderParams = $this->request->getParams();
             $quickOrder = $this->quickOrderFactory->create();

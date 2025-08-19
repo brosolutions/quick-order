@@ -20,5 +20,10 @@
             <block class="BroSolutions\QuickOrder\Block\Quickorder"
                    name="quickorder.product.view.additional" template="BroSolutions_QuickOrder::product-view.phtml"/>
         </referenceBlock>
+        <referenceBlock name="product.info.addtocart.bundle">
+            <block class="BroSolutions\QuickOrder\Block\Quickorder"
+                   name="quickorder.product.view.bundle" template="BroSolutions_QuickOrder::product-view.phtml"/>
+        </referenceBlock>
+
     </body>
 </page>

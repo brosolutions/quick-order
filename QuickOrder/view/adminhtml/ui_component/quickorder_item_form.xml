@@ -20,6 +20,8 @@
         <item name="config" xsi:type="array">
             <item name="dataScope" xsi:type="string">data</item>
             <item name="namespace" xsi:type="string">quickorder_item_form</item>
+            <item name="method" xsi:type="string">post</item>
+            <item name="formAction" xsi:type="url" path="quickorder/item/create"/>
         </item>
         <item name="template" xsi:type="string">templates/form/collapsible</item>
 
@@ -30,14 +32,11 @@
                 <item name="class" xsi:type="string">back</item>
                 <item name="url" xsi:type="string">*/*/index</item>
             </item>
-            <item name="save" xsi:type="array">
-                <item name="name" xsi:type="string">save</item>
-                <item name="label" xsi:type="string" translate="true">Create Order</item>
-                <item name="class" xsi:type="string">primary</item>
-                <item name="url" xsi:type="string">quickorder/index/createOrder</item>
-            </item>
+            <item name="save" xsi:type="string">BroSolutions\QuickOrder\Block\Adminhtml\Edit\Save</item>
+            <item name="delete" xsi:type="string">BroSolutions\QuickOrder\Block\Adminhtml\Edit\Delete</item>
         </item>
     </argument>
+
     <dataSource name="quickorder_item_form_data_source">
         <argument name="dataProvider" xsi:type="configurableObject">
             <argument name="class" xsi:type="string">BroSolutions\QuickOrder\Ui\Form\DataProvider</argument>
@@ -46,6 +45,11 @@
             <argument name="requestFieldName" xsi:type="string">entity_id</argument>
             <argument name="collectionFactory"
                       xsi:type="object">BroSolutions\QuickOrder\Model\ResourceModel\QuickOrder\Grid\CollectionFactory</argument>
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="submit_url" xsi:type="url" path="quickorder/index/save"/>
+                </item>
+            </argument>
         </argument>
         <argument name="data" xsi:type="array">
             <item name="js_config" xsi:type="array">
@@ -75,9 +79,18 @@
                     <item name="label" xsi:type="string" translate="true">Telephone</item>
                     <item name="dataType" xsi:type="string">text</item>
                     <item name="formElement" xsi:type="string">input</item>
-                    <item name="disabled" xsi:type="boolean">true</item>
+                    <item name="validation" xsi:type="array">
+                        <item name="required-entry" xsi:type="boolean">true</item>
+                        <item name="validate-digits" xsi:type="boolean">true</item>
+                    </item>
                 </item>
             </argument>
+        </field>
+        <field name="entity_id" formElement="hidden">
+            <settings>
+                <dataType>string</dataType>
+                <dataScope>entity_id</dataScope>
+            </settings>
         </field>
     </fieldset>
 </form>

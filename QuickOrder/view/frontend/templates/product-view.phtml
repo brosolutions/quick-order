@@ -23,6 +23,27 @@ use Magento\Framework\Escaper;
 
 <?php if($block->getCanShowPdp()): ?>
     <h3><?= $escaper->escapeHtml(__('Quick order'))?></h3>
-    <input type="tel" name="quick_order_telephone" id="id_quick_order_telephone" />
-    <button type="submit" name="quick_order" value="true"><?= $escaper->escapeHtml(__('Call me'))?></button>
+    <input type="tel" name="quick_order_telephone" id="id_quick_order_telephone" class="quick-order-btn" />
+    <button id="phone_number" type="submit" name="quick_order" value="true" onclick="quickOrderPlace(event)"><?= $escaper->escapeHtml(__('Call me'))?></button>
+    <script>
+        let telephoneInput = document.getElementById('id_quick_order_telephone');
+        let form = document.querySelector('#product_addtocart_form');
+        function quickOrderPlace(event)
+        {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!telephoneInput.classList.contains('required-entry') && !telephoneInput.classList.contains('validate-digits')) {
+                telephoneInput.className += " required-entry validate-digits";
+            }
+            form.requestSubmit();
+        }
+
+        document.getElementById('product-addtocart-button').addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            telephoneInput.classList.remove('required-entry');
+            telephoneInput.classList.remove('validate-digits');
+            form.requestSubmit();
+        });
+    </script>
 <?php endif; ?>
