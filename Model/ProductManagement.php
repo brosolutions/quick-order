@@ -163,12 +163,16 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
-     * @param string $sku
+     * @param $sku
      * @param string $storeCode
      * @return array
      */
-    public function getProduct(string $sku, string $storeCode): array
+    public function getProduct($sku, string $storeCode): array
     {
+        $skus = is_array($sku)
+            ? array_column($sku, 'sku')
+            : [$sku];
+
         $products = [];
         $this->currencyCode = $this->storeCurrencyService->execute($storeCode);
 
@@ -184,9 +188,9 @@ class ProductManagement implements ProductManagementInterface
             );
 
             $collection = $this->productCollectionFactory->create();
-            $product = $collection->addAttributeToSelect('*')
+            $productItems = $collection->addAttributeToSelect('*')
                 ->addStoreFilter($this->storeManager->getStore()->getId())
-                ->addFieldToFilter('sku', $sku)
+                ->addFieldToFilter('sku', ['in' => $skus])
                 ->addAttributeToFilter('status', Status::STATUS_ENABLED)
                 ->addStoreFilter($this->storeIdService->execute($storeCode))
                 ->setVisibility([
@@ -196,39 +200,42 @@ class ProductManagement implements ProductManagementInterface
                         Visibility::VISIBILITY_BOTH
                     ]
                 ])
-                ->getLastItem();
+                ->getItems();
 
-            $product->getTierPrices();
-            $data = $product->getData();
-            $data['currency_code'] = $this->currencyCode;
-            $data['currency_symbol'] = $this->currencySymbolService->execute($this->currencyCode);
-            $data['product_url'] = $product->getProductUrl();
-            $data['thumbnail'] = $this->imageFactory->create($product, 'cart_page_product_thumbnail', [])->getImageUrl();
+            foreach ($productItems as $product) {
+                $product->getTierPrices();
 
-            if (!empty($data['price'])) {
-                $converted = $this->currencyConverter->execute($data['price'], $this->currencyCode);
-                $data['price'] = $data['default_price'] = $converted;
+                $data = $product->getData();
+                $data['currency_code'] = $this->currencyCode;
+                $data['currency_symbol'] = $this->currencySymbolService->execute($this->currencyCode);
+                $data['product_url'] = $product->getProductUrl();
+                $data['thumbnail'] = $this->imageFactory->create($product, 'cart_page_product_thumbnail', [])->getImageUrl();
+
+                if (!empty($data['price'])) {
+                    $converted = $this->currencyConverter->execute($data['price'], $this->currencyCode);
+                    $data['price'] = $data['default_price'] = $converted;
+                }
+
+                $data['stock'] = $this->stockRepository->get($data['entity_id'])->getQty();
+                $data['qty'] = 1;
+
+                switch ($data['type_id']) {
+                    case Configurable::TYPE_CODE:
+                        $data = $this->processConfigurable($product, $data);
+                        break;
+                    case Type::TYPE_BUNDLE:
+                        $data = $this->processBundle($product, $data);
+                        break;
+                    case 'grouped':
+                        $data = $this->processGrouped($product, $data);
+                        break;
+                }
+
+                $data['custom_options'] = $this->processCustomOptions($product);
+                $data['active_custom_options'] = [];
+
+                $products[] = $data;
             }
-
-            $data['stock'] = $this->stockRepository->get($data['entity_id'])->getQty();
-            $data['qty'] = 1;
-
-            switch ($data['type_id']) {
-                case Configurable::TYPE_CODE:
-                    $data = $this->processConfigurable($product, $data);
-                    break;
-                case Type::TYPE_BUNDLE:
-                    $data = $this->processBundle($product, $data);
-                    break;
-                case 'grouped':
-                    $data = $this->processGrouped($product, $data);
-                    break;
-            }
-
-            $data['custom_options'] = $this->processCustomOptions($product);
-            $data['active_custom_options'] = [];
-
-            $products[] = $data;
 
         } catch (NoSuchEntityException $e) {
             $this->logger->error(sprintf('Error fetching product: %s', $e->getMessage()), $e->getTrace());
@@ -246,13 +253,31 @@ class ProductManagement implements ProductManagementInterface
      */
     private function processConfigurable(Product $product, array $data): array
     {
+        $associatedProducts = [];
         $attrs = $product->getTypeInstance()->getConfigurableAttributesAsArray($product);
         $activeAttrs = $this->getActiveAttributes($attrs);
         $associated = $this->getAssociatedProducts($product);
 
+        foreach ($associated as $associatedProduct) {
+            $options = [];
+            foreach ($attrs as $attr) {
+                $optionCodeValue = $associatedProduct[$attr['attribute_code']] ?? null;
+
+                $valueMap = array_column($attr['values'], 'label', 'value_index');
+
+                $options[] = [
+                    'option_name'  => $attr['label'],
+                    'option_value' => $valueMap[$optionCodeValue] ?? null,
+                ];
+            }
+
+            $associatedProduct['options'] = $options;
+            $associatedProducts[] = $associatedProduct;
+        }
+
         $data['attributes'] = array_values($attrs);
-        $data['active_product'] = $this->matchVariant($associated, $activeAttrs);
-        $data['used_products'] = $associated;
+        $data['active_product'] = $this->matchVariant($associatedProducts, $activeAttrs);
+        $data['used_products'] = $associatedProducts;
 
         return $data;
     }
@@ -273,7 +298,7 @@ class ProductManagement implements ProductManagementInterface
                 'option_id' => $opt->getOptionId(),
                 'option_type' => $opt->getType(),
                 'position' => $opt->getPosition(),
-                'require' => $opt->getRequired(),
+                'required' => $opt->getRequired(),
             ];
         }
 
@@ -293,7 +318,7 @@ class ProductManagement implements ProductManagementInterface
                 'option_id' => $sel->getOptionId(),
                 'product_name' => $sel->getName(),
                 'qty' => (int)$sel->getSelectionQty(),
-                'require' => $optionInfo[$sel->getOptionId()]['require'],
+                'required' => $optionInfo[$sel->getOptionId()]['required'],
                 'selection_id' => $sel->getSelectionId(),
                 'title' => $optionTitles[$sel->getOptionId()],
                 'type' => $optionInfo[$sel->getOptionId()]['option_type']
@@ -336,7 +361,7 @@ class ProductManagement implements ProductManagementInterface
 
             $childData['thumbnail'] = $this->imageFactory->create($child, 'product_base_image', [])->getImageUrl();
             $groupedProducts[] = $childData;
-            $activeSelections[] = ['id' => $childData['entity_id'], 'qty' => $childData['qty'] ?? 1];
+            $activeSelections[] = ['id' => $childData['entity_id'], 'qty' => $childData['qty'] ?? 1, 'name' => $childData['name']];
         }
 
         usort($groupedProducts, fn ($a, $b) => ($a['position'] ?? 0) <=> ($b['position'] ?? 0));
@@ -401,6 +426,8 @@ class ProductManagement implements ProductManagementInterface
                     'value_id' => $item['selection_id'] ?? null,
                     'value' => (bool)($item['is_default'] ?? false),
                     'change_qty' => $item['can_change_qty'] ?? false,
+                    'product_name' => $item['product_name'] ?? false,
+                    'title' => $item['title'] ?? false,
                     'qty' => $item['qty'] ?? 0
                 ], $dataSet[$key] ?? [])
             ];

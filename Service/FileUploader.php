@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Service;
 
+use Exception;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\File\UploaderFactory;
 use Magento\Framework\Filesystem;
-use Exception;
 use Magento\Framework\Filesystem\Io\File;
 
 /**
@@ -64,17 +64,19 @@ class FileUploader
      * File upload
      *
      * @param string $fileName
+     * @param string $fileInputName
+     * @param string $directory
      * @return string
      * @throws Exception
      */
-    public function execute(string $fileName): string
+    public function execute(string $fileName, string $fileInputName = 'file', string $directory = DirectoryList::MEDIA): string
     {
         $folderStructure = $this->generateFolderStructure($fileName);
 
-        $uploader = $this->uploaderFactory->create(['fileId' => 'file']);
+        $uploader = $this->uploaderFactory->create(['fileId' => $fileInputName]);
         $uploader->setAllowCreateFolders(true);
 
-        $directory = $this->filesystem->getDirectoryRead(DirectoryList::MEDIA);
+        $directory = $this->filesystem->getDirectoryRead($directory);
 
         $uploadDir = $directory->getAbsolutePath(self::DIRECTORY_TO_DOWNLOAD . '/' . $folderStructure);
         if (!$this->fileIo->fileExists($uploadDir)) {

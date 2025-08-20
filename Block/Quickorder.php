@@ -146,6 +146,16 @@ class Quickorder extends Template
     }
 
     /**
+     * Get download list url
+     *
+     * @return string
+     */
+    public function getDownloadListUrl()
+    {
+        return $this->getUrl('quickorder/index/getlist');
+    }
+
+    /**
      * Get upload file url
      *
      * @return string
@@ -153,6 +163,16 @@ class Quickorder extends Template
     public function getUploadFileUrl()
     {
         return $this->getUrl('quickorder/index/upload');
+    }
+
+    /**
+     * Get csv uploader url
+     *
+     * @return string
+     */
+    public function getCsvUploaderUrl()
+    {
+        return $this->getUrl('quickorder/index/uploadcsv');
     }
 
     /**

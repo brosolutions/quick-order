@@ -21,14 +21,14 @@ use Magento\Framework\Escaper;
  **/
 ?>
 
-<h1><?= $escaper->escapeHtml(__('Quick Order'))?></h1>
+<h1><?= $escaper->escapeHtml(__('Quick Order')) ?></h1>
 <div class="autocomplete-container">
-    <label for="search-input"><?= $escaper->escapeHtml(__('Search for items:'))?></label>
-    <input type="text" id="search-input" placeholder="<?= $escaper->escapeHtmlAttr(__('Type to search...'))?>">
+    <label for="search-input"><?= $escaper->escapeHtml(__('Search for items:')) ?></label>
+    <input type="text" id="search-input" placeholder="<?= $escaper->escapeHtmlAttr(__('Type to search...')) ?>">
     <div id="suggestions-container" style="display: none" class="autocomplete-suggestions"></div>
 </div>
 
-<h2><?= $escaper->escapeHtml(__('Magento Product Info'))?></h2>
+<h2><?= $escaper->escapeHtml(__('Magento Product Info')) ?></h2>
 
 <!-- Product Form -->
 <div class="quick-order-product-form">
@@ -36,19 +36,26 @@ use Magento\Framework\Escaper;
         <div id="loader"></div>
     </div>
 
-    <ul id="fast-product-list">
+    <ul id="quick-order-product-product-list">
         <li>
-            <div><?= $escaper->escapeHtml(__('Image'))?></div>
-            <div><?= $escaper->escapeHtml(__('Product(s)'))?></div>
-            <div><?= $escaper->escapeHtml(__('Sku'))?></div>
-            <div><?= $escaper->escapeHtml(__('Qty'))?></div>
-            <div><?= $escaper->escapeHtml(__('Subtotal'))?></div>
-            <div><?= $escaper->escapeHtml(__('Action'))?></div>
+            <div><?= $escaper->escapeHtml(__('Image')) ?></div>
+            <div><?= $escaper->escapeHtml(__('Product(s)')) ?></div>
+            <div><?= $escaper->escapeHtml(__('Sku')) ?></div>
+            <div><?= $escaper->escapeHtml(__('Qty')) ?></div>
+            <div><?= $escaper->escapeHtml(__('Subtotal')) ?></div>
+            <div><?= $escaper->escapeHtml(__('Action')) ?></div>
         </li>
     </ul>
     <div class="quick-order-product-form-footer">
-        <button type="button" class="add-to-cart action primary inline-flex shrink-0 ml-auto  btn btn-primary mt-2 "
-        ><?= $escaper->escapeHtml(__('Add to cart'))?></button>
+        <button type="button" class="add-to-cart action primary inline-flex shrink-0 ml-auto  btn btn-primary mt-2 ">Add
+            to cart
+        </button>
+        <button type="button" class="download-list inline-flex btn">Download List</button>
+        <div class="csv-uploader-block">
+            <input class="csvInput input-text" type="file" name="csv" accept=".csv"/>
+            <button type="button" class="csv-uploader">Upload CSV</button>
+            <div class="csvStatus message"></div>
+        </div>
     </div>
 </div>
 
@@ -58,10 +65,10 @@ use Magento\Framework\Escaper;
     function getCookie(name) {
         var nameEQ = name + "=";
         var ca = document.cookie.split(';');
-        for(var i=0;i < ca.length;i++) {
+        for (var i = 0; i < ca.length; i++) {
             var c = ca[i];
-            while (c.charAt(0)==' ') c = c.substring(1,c.length);
-            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
         }
         return null;
     }
@@ -70,6 +77,7 @@ use Magento\Framework\Escaper;
         const apiSearchProductUrl = "<?= $escaper->escapeUrl($block->getQuickOrderSearchProductUrl()); ?>";
         const apiGetProductUrl = "<?= $escaper->escapeUrl($block->getQuickOrderGetProductUrl()); ?>";
         const apiAddToCartUrl = "<?= $escaper->escapeUrl($block->getAddToCartUrl()); ?>";
+        const apiDownloadListUrl = "<?= $escaper->escapeUrl($block->getDownloadListUrl()); ?>";
         const uploadFileUrl = "<?= $escaper->escapeUrl($block->getUploadFileUrl()); ?>";
         const formKey = (typeof hyva === 'object') ? hyva.getFormKey() : getCookie('form_key');
         const mediaUrl = "<?= $escaper->escapeUrl($block->getMediaUrl()); ?>";
@@ -79,12 +87,16 @@ use Magento\Framework\Escaper;
         const inputElement = document.getElementById('search-input');
         const suggestionsContainer = document.getElementById('suggestions-container');
         const productsFromLocalStorage = getDataFromQuickOrderLocalStorage();
+        const csvUploadFileUrl = "<?= $escaper->escapeUrl($block->getCsvUploaderUrl()); ?>";
+
 
         productsFromLocalStorage.forEach(productData => {
             renderProductList(productData);
         });
         addEventListeners();
         addEventListenerAddToCart();
+        addEventListenerDownloadList();
+        addEventListenerCsvUploader();
 
         let debounceTimer;
 
@@ -222,7 +234,7 @@ use Magento\Framework\Escaper;
         }
 
         function renderProductList(productData) {
-            const list = document.getElementById('fast-product-list');
+            const list = document.getElementById('quick-order-product-product-list');
             const li = document.createElement('li');
             const input = document.createElement("input");
             const div = document.createElement("div");
@@ -337,7 +349,8 @@ use Magento\Framework\Escaper;
                                     input.setAttribute('type', value['type']);
                                     input.setAttribute('id', value['selection_id']);
                                     input.setAttribute('name', key);
-
+                                    input.setAttribute('product_name', value['product_name']);
+                                    input.setAttribute('title', value['title']);
                                     const filteredActiveSelectionsArray = activeSelectionsArray.filter(item => item.id === parseInt(value['option_id']));
 
                                     if (Array.isArray(filteredActiveSelectionsArray[0]['selection_value'])) {
@@ -389,6 +402,8 @@ use Magento\Framework\Escaper;
 
                                     optionSelect.text = qty + ' + ' + value['product_name'] + " + " + productData['currency_symbol'] + value['base_price'].toFixed(2);
 
+                                    optionSelect.setAttribute('product_name', value['product_name']);
+                                    optionSelect.setAttribute('title', value['title']);
                                     select.setAttribute('name', key);
                                     select.appendChild(optionSelect);
                                 }
@@ -477,7 +492,7 @@ use Magento\Framework\Escaper;
                                 })
                             }
 
-                            if(value['tier_price'].length > 0) {
+                            if (value['tier_price'].length > 0) {
                                 const regularPriceSpan = document.createElement('span');
                                 const regularPriceSpanText = document.createTextNode("Regular Price " + productData['currency_symbol'] + value['price'].toFixed(2));
                                 regularPriceSpan.appendChild(regularPriceSpanText);
@@ -494,7 +509,7 @@ use Magento\Framework\Escaper;
                             input.setAttribute('type', 'text');
                             input.setAttribute('onkeypress', "return /[0-99999]/i.test(event.key)");
                             input.setAttribute('value', qty);
-
+                            input.setAttribute('title', value['name']);
                             input.classList.add("grouped-qty");
                             input.setAttribute('name', value['entity_id']);
                             groupedSelection.appendChild(input);
@@ -541,7 +556,8 @@ use Magento\Framework\Escaper;
                     const divQty = document.createElement("div");
                     if (productData['type_id'] === 'bundle') {
                         divQty.innerHTML = productData['currency_symbol'] + (productData['qty'] * getPriceForBundleProduct(productData['pid'])).toFixed(2);
-                    } if (productData['type_id'] === 'grouped') {
+                    }
+                    if (productData['type_id'] === 'grouped') {
                         divQty.innerHTML = productData['currency_symbol'] + (getPriceForGroupedProduct(productData['pid']) * productData['qty']).toFixed(2);
                     } else {
                         divQty.innerHTML = productData['currency_symbol'] + getPrice(productData).toFixed(2);
@@ -571,12 +587,11 @@ use Magento\Framework\Escaper;
             const divTierPrices = document.createElement("div");
             let tierPriceStringTotal;
 
-            if (productData['active_product'] && productData['type_id'] === 'configurable' ) {
+            if (productData['active_product'] && productData['type_id'] === 'configurable') {
                 tierPriceStringTotal = getTierPriceString(productData['active_product']['tier_price'], productData);
-            } else if (productData['type_id'] === 'bundle'){
+            } else if (productData['type_id'] === 'bundle') {
                 tierPriceStringTotal = getTierPriceBundleString(productData['tier_price']);
-            }
-            else if (productData['tier_price']) {
+            } else if (productData['tier_price']) {
                 tierPriceStringTotal = getTierPriceString(productData['tier_price'], productData);
             }
 
@@ -593,10 +608,11 @@ use Magento\Framework\Escaper;
 
             return tierPriceString;
         }
+
         function getTierPriceBundleString(tierPricesArr) {
             let tierPriceString = '<br>';
             tierPricesArr.forEach(value => {
-                tierPriceString = tierPriceString + "Buy " + parseInt(value['price_qty']) + " with " +  parseFloat(value['percentage_value']) + "% for each<br>";
+                tierPriceString = tierPriceString + "Buy " + parseInt(value['price_qty']) + " with " + parseFloat(value['percentage_value']) + "% for each<br>";
             })
 
             return tierPriceString;
@@ -806,7 +822,9 @@ use Magento\Framework\Escaper;
             let selectedSelectionValueTemp = [];
 
             if (options.length > 0 && options[0]['type'] !== 'select-multiple') {
+
                 options.forEach(function (option) {
+
                     let Obj = {};
                     selectedSelectionIdTemp = options[0].name;
                     Obj.value_id = option.value;
@@ -817,6 +835,9 @@ use Magento\Framework\Escaper;
                         Obj.qty = getQtyByInputId(product, option['id'], option['name']).qty;
                         Obj.change_qty = getQtyByInputId(product, option['id'], option['name']).selectionCanChangeQty;
                     }
+
+                    Obj.product_name = option.getAttribute("product_name");
+                    Obj.title = option.getAttribute("title");
                     selectedSelectionValueTemp.push(Obj);
                 });
             } else {
@@ -832,6 +853,8 @@ use Magento\Framework\Escaper;
                         qty = getQtyByInputId(product, option['value'], options[0].name).qty;
                         Obj.qty = qty;
                     }
+                    Obj.product_name = option.getAttribute("product_name");
+                    Obj.title = option.getAttribute("title");
                     selectedSelectionValueTemp.push(Obj);
                 });
             }
@@ -932,7 +955,7 @@ use Magento\Framework\Escaper;
             const parentElement = input.closest('[data-pid]');
             const pid = parentElement.getAttribute('data-pid');
             const product = getDataFromQuickOrderLocalStorageByPid(pid);
-            const selectedSelection = {id: input.name, qty: input.value};
+            const selectedSelection = {id: input.name, qty: input.value, name: input.title};
             const newActiveSelections = [];
             const activeSelections = product['active_selections'];
 
@@ -1590,7 +1613,7 @@ use Magento\Framework\Escaper;
             const pid = parentElement.getAttribute('data-pid');
             const product = getDataFromQuickOrderLocalStorageByPid(pid);
 
-            if(product['type_id'] === 'bundle') {
+            if (product['type_id'] === 'bundle') {
                 const price = getPriceForBundleProduct(pid);
                 parentElement.querySelector('.item-price').innerHTML = product['currency_symbol'] + (product['qty'] * price).toFixed(2);
             } else {
@@ -1680,7 +1703,7 @@ use Magento\Framework\Escaper;
         function checkAndApplyTierPrice(activeProductPrice, qty, product) {
 
             let tierPrice;
-            if(product['type_id'] === 'configurable'){
+            if (product['type_id'] === 'configurable') {
                 if (product['active_product'] === undefined || product['active_product']['tier_price'] === undefined) {
                     return activeProductPrice;
                 }
@@ -1788,7 +1811,7 @@ use Magento\Framework\Escaper;
 
         function addEventListenerAddToCart() {
 
-            const button = document.querySelector('.quick-order-product-form-footer button');
+            const button = document.querySelector('.quick-order-product-form-footer button.add-to-cart');
             button.addEventListener('click', function () {
 
                 const allBlocksValid = [];
@@ -1805,6 +1828,24 @@ use Magento\Framework\Escaper;
                 if (allTrue === true) {
                     addToCart();
                 }
+            });
+
+        }
+
+        function addEventListenerDownloadList() {
+
+            const button = document.querySelector('.quick-order-product-form-footer button.download-list');
+            button.addEventListener('click', function () {
+                downloadList();
+            });
+
+        }
+
+        function addEventListenerCsvUploader() {
+
+            const button = document.querySelector('.quick-order-product-form-footer button.csv-uploader');
+            button.addEventListener('click', function (button) {
+                csvUploader(button);
             });
 
         }
@@ -1951,6 +1992,110 @@ use Magento\Framework\Escaper;
             }
 
             return isValid;
+        }
+
+        async function downloadList() {
+            let loader = document.querySelector('.quick-order-product-form #loader-wrapper');
+            loader.style.display = "flex";
+            const storedProductData = localStorage.getItem('quick_order_local_storage');
+
+            const parsedData = JSON.parse(storedProductData);
+
+            const storedProductDataFiltered = parsedData.map(item => ({
+                entity_id: item.entity_id,
+                sku: item.sku,
+                type_id: item.type_id,
+                qty: item.qty,
+                active_selections: item.active_selections,
+                attributes_codes: item.attributes
+                    ? item.attributes.map(attr => attr.attribute_code)
+                    : null,
+                attributes_labels: item.attributes
+                    ? item.attributes.map(attr => attr.frontend_label)
+                    : null,
+                active_product: item.active_product
+                    ? {
+                        sku: item.active_product.sku,
+                        qty: item.active_product.qty,
+                        options: item.active_product.options
+                    }
+                    : null
+            }));
+
+            console.log(storedProductDataFiltered);
+
+            const formData = new FormData();
+            formData.append('jsonData', JSON.stringify(storedProductDataFiltered))
+            if (storedProductData) {
+                fetch(apiDownloadListUrl + '?form_key=' + formKey, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.blob())
+                    .then(blob => {
+                        loader.style.display = "none";
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'export.csv';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                    })
+                    .catch(error => {
+                        console.error('Error downloading list', error);
+                    });
+            }
+        }
+
+
+        function setStatus(msg, isError) {
+            let statusBox = document.querySelector('.quick-order-product-form-footer .csvStatus');
+            statusBox.textContent = msg;
+            statusBox.style.color = isError ? 'red' : 'inherit';
+        }
+
+        async function csvUploader(button) {
+
+
+            const input = document.querySelector('.quick-order-product-form-footer input.csvInput');
+            setStatus('', false);
+            if (!input.files || !input.files[0]) {
+                setStatus('<?= $escaper->escapeHtml(__('Select the .csv file.'))?>', true);
+                return;
+            }
+            let file = input.files[0];
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                setStatus('<?= $escaper->escapeHtml(__('Please upload .csv only.'))?>', true);
+                return;
+            }
+
+            let fd = new FormData();
+            fd.append('csv', file);
+
+            setStatus('<?= $escaper->escapeHtml(__('Sending…'))?>');
+            fetch(csvUploadFileUrl + '?form_key=' + formKey + `&storeCode=${encodeURIComponent(storeCode)}`, {
+                method: 'POST',
+                body: fd,
+                credentials: 'same-origin'
+            })
+                .then(function (res) {
+                    return res.json();
+                })
+                .then(function (data) {
+                    if (data && data.success) {
+                        setStatus('<?= $escaper->escapeHtml(__('Done'))?>: ' + (data.message || 'OK') + (data.stored_as ? ' (' + data.stored_as + ')' : ''));
+                        localStorage.removeItem("quick_order_local_storage");
+                        localStorage.setItem("quick_order_local_storage", JSON.stringify(data.products));
+                        window.location.reload(true);
+                    } else {
+                        setStatus('<?= $escaper->escapeHtml(__('Error'))?>: ' + (data && data.message ? data.message : 'Unknown error'), true);
+                    }
+                })
+                .catch(function (err) {
+                    setStatus('<?= $escaper->escapeHtml(__('Connection error'))?>: ' + err, true);
+                });
+
         }
 
         async function addToCart() {

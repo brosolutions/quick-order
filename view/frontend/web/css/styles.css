@@ -72,72 +72,72 @@
     margin-bottom: 1rem;
 }
 
-#fast-product-list {
+#quick-order-product-product-list {
     margin: 0;
     padding: 0;
 }
 
-#fast-product-list li {
+#quick-order-product-product-list li {
     display: flex;
     padding: 8px;
     border: 1px solid #ddd;
 }
 
-#fast-product-list li div img {
+#quick-order-product-product-list li div img {
     max-width: 70%;
     display: block;
 }
 
-#fast-product-list li > div {
+#quick-order-product-product-list li > div {
     text-align: left;
     width: 14%;
     padding: 2px 0;
 }
 
-#fast-product-list li > div:nth-child(2) {
+#quick-order-product-product-list li > div:nth-child(2) {
     width: 30%;
 }
 
-#fast-product-list li div.item-qty .item-qty-wrap {
+#quick-order-product-product-list li div.item-qty .item-qty-wrap {
     min-width: 60%;
     margin: 0 auto;
 }
 
-#fast-product-list li div.item-qty .ordered-qty {
+#quick-order-product-product-list li div.item-qty .ordered-qty {
     font-size: 1.4rem;
     width: 30px
 }
 
-#fast-product-list li div.item-qty .minus-btn,
-#fast-product-list li div.item-qty .plus-btn {
+#quick-order-product-product-list li div.item-qty .minus-btn,
+#quick-order-product-product-list li div.item-qty .plus-btn {
     cursor: pointer;
     margin: 0 3px
 }
 
-#fast-product-list li div.item-name p {
+#quick-order-product-product-list li div.item-name p {
     font-weight: bold;
 }
 
-#fast-product-list li div.item-name .bundle-wrapper .bundle-selection,
-#fast-product-list li div.item-name .grouped-wrapper .grouped-selection {
+#quick-order-product-product-list li div.item-name .bundle-wrapper .bundle-selection,
+#quick-order-product-product-list li div.item-name .grouped-wrapper .grouped-selection {
     padding: 10px 0;
 }
 
-#fast-product-list li div.item-name .bundle-wrapper .bundle-selection .bundle-qty-text {
+#quick-order-product-product-list li div.item-name .bundle-wrapper .bundle-selection .bundle-qty-text {
     display: block;
     margin-top: 5px;
 }
 
-#fast-product-list li div.item-name .bundle-qty,
-#fast-product-list li div.item-name .grouped-qty {
+#quick-order-product-product-list li div.item-name .bundle-qty,
+#quick-order-product-product-list li div.item-name .grouped-qty {
     width: 60px;
 }
 
-#fast-product-list li div.item-name .required {
+#quick-order-product-product-list li div.item-name .required {
     color: red;
 }
 
-#fast-product-list li .select-wrapper .select-item {
+#quick-order-product-product-list li .select-wrapper .select-item {
     padding-top: 10px;
     width: 45%;
     margin-right: 5%;
@@ -145,32 +145,32 @@
     text-align: left;
 }
 
-#fast-product-list li .select-wrapper .select-item select {
+#quick-order-product-product-list li .select-wrapper .select-item select {
     margin-top: 5px;
     margin-right: 5px;
     display: inline-block;
 }
 
-#fast-product-list li .option-wrapper,
-#fast-product-list li .select-wrapper {
+#quick-order-product-product-list li .option-wrapper,
+#quick-order-product-product-list li .select-wrapper {
     padding-top: 15px;
     overflow: hidden;
 }
 
-#fast-product-list li .option-wrapper-date div,
-#fast-product-list li .option-wrapper-date-time div,
-#fast-product-list li .option-wrapper-time div {
+#quick-order-product-product-list li .option-wrapper-date div,
+#quick-order-product-product-list li .option-wrapper-date-time div,
+#quick-order-product-product-list li .option-wrapper-time div {
     display: flex;
     gap: 4px;
     align-items: center;
 }
 
-#fast-product-list li .option-wrapper-date div select {
+#quick-order-product-product-listli .option-wrapper-date div select {
     display: inline-block;
     margin-right: 4px;
 }
 
-#fast-product-list .error {
+#quick-order-product-product-list .error {
     color: red;
     font-size: 12px;
 }
@@ -205,4 +205,26 @@
  @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+.csv-uploader-block {
+    padding: 1rem;
+    border: 1px solid #dcdcdc;
+    border-radius: 4px;
+    background-color: #fafafa;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: 0;
+    margin-top: 1rem;
+    text-align: right;
+}
+
+.csv-uploader-block .input-text {
+    margin-bottom: 0.75rem;
+    display: inline-block;
+    text-align: right;
+}
+
+.csv-uploader-block  .csvStatus {
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
 }
