@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="quickorder.product.view" remove="true"/>
+        <referenceBlock name="quickorder.product.view.additional" remove="true"/>
+        <referenceBlock name="quickorder.product.view.bundle" remove="true"/>
+
+        <referenceBlock name="product.info.addtocart">
+            <block class="BroSolutions\QuickOrder\Block\Quickorder"
+                   name="quickorder.product.view.hyva" template="BroSolutions_QuickOrder::product-view-hyva.phtml"/>
+        </referenceBlock>
+        <referenceBlock name="product.info.addtocart.additional">
+            <block class="BroSolutions\QuickOrder\Block\Quickorder"
+                   name="quickorder.product.view.additional.hyva" template="BroSolutions_QuickOrder::product-view-hyva.phtml"/>
+        </referenceBlock>
+        <referenceBlock name="product.info.addtocart.bundle">
+            <block class="BroSolutions\QuickOrder\Block\Quickorder"
+                   name="quickorder.product.view.bundle.hyva" template="BroSolutions_QuickOrder::product-view-hyva.phtml"/>
+        </referenceBlock>
+    </body>
+</page>

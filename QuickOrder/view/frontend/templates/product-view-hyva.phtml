@@ -19,8 +19,6 @@ use Magento\Framework\Escaper;
  * @var Quickorder $block
  * @var Escaper $escaper
  **/
-var_dump($block->getLayout()->getUpdate()->getHandles());
-
 ?>
 
 <?php if($block->getCanShowPdp()): ?>
@@ -29,13 +27,13 @@ var_dump($block->getLayout()->getUpdate()->getHandles());
     <button id="phone_number" type="submit" name="quick_order" value="true" onclick="quickOrderPlace(event)"><?= $escaper->escapeHtml(__('Call me'))?></button>
     <script>
         let telephoneInput = document.getElementById('id_quick_order_telephone');
-        let form = document.querySelector('#product_addtocart_form');
+        let form = document.getElementById('product_addtocart_form');
         function quickOrderPlace(event)
         {
             event.preventDefault();
             event.stopPropagation();
-            if (!telephoneInput.classList.contains('required-entry') && !telephoneInput.classList.contains('validate-digits')) {
-                telephoneInput.className += " required-entry validate-digits";
+            if (!telephoneInput.getAttribute('data-validate').indexOf('required-entry') || !telephoneInput.getAttribute('data-validate').indexOf('validate-digits')) {
+                telephoneInput.setAttribute('data-validate', '{"validate-digits": true}');
             }
             form.requestSubmit();
         }
@@ -43,8 +41,7 @@ var_dump($block->getLayout()->getUpdate()->getHandles());
         document.getElementById('product-addtocart-button').addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            telephoneInput.classList.remove('required-entry');
-            telephoneInput.classList.remove('validate-digits');
+            telephoneInput.removeAttribute('data-validate');
             form.requestSubmit();
         });
     </script>
