@@ -83,7 +83,7 @@ class FileUploader
             $this->fileIo->mkdir($uploadDir, 0755, true);
         }
 
-        $uploader->save($uploadDir)['file'];
+        $fileName = $uploader->save($uploadDir)['file'];
 
         return self::DIRECTORY_TO_DOWNLOAD . '/' . $folderStructure . '/' . $fileName;
     }

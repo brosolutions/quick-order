@@ -76,11 +76,12 @@ class CsvProductParser
             $item = array_combine($header, $row);
 
             if (!$item || empty($item['sku'])) {
-                continue; // пропускаємо пусті строки
+                continue; // ignore empty lines
             }
 
             $options = [];
             foreach ($item as $key => $value) {
+                $qty = 1;
                 if (str_starts_with($key, 'option_') && !empty($value)) {
                     $parts = explode(':', $value);
 
@@ -99,6 +100,7 @@ class CsvProductParser
                         ];
                     }
                 }
+
             }
 
             $result[] = [

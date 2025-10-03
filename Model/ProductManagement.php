@@ -172,6 +172,12 @@ class ProductManagement implements ProductManagementInterface
         $skus = is_array($sku)
             ? array_column($sku, 'sku')
             : [$sku];
+        $qtyData = [];
+        if (is_array($sku)) {
+            foreach ($sku as $productData) {
+                $qtyData[$productData['sku']] = $productData['qty'];
+            }
+        }
 
         $products = [];
         $this->currencyCode = $this->storeCurrencyService->execute($storeCode);
@@ -217,7 +223,7 @@ class ProductManagement implements ProductManagementInterface
                 }
 
                 $data['stock'] = $this->stockRepository->get($data['entity_id'])->getQty();
-                $data['qty'] = 1;
+                $data['qty'] = (isset($qtyData[$data['sku']])) ? $qtyData[$data['sku']] :  1;
 
                 switch ($data['type_id']) {
                     case Configurable::TYPE_CODE:
@@ -334,6 +340,7 @@ class ProductManagement implements ProductManagementInterface
         $data['active_selections'] = $this->buildSelectionStructure($selectionArr);
         $data['quick_selection_array'] = $selectionArr;
         $data['price'] = $data['default_price'] = $bundleDefaultPrice;
+        //$data['qty'] = $product['qty'];
 
         return $data;
     }

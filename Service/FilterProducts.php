@@ -63,15 +63,15 @@ class FilterProducts
         if (empty($option = $this->getOptionFromProduct($product, $options))) {
             return $product;
         }
-
         foreach ($product['used_products'] as $usedProduct) {
             if ($this->hasExactOptions($usedProduct, $option[0]['options'])) {
                 $product['active_product'] =  $usedProduct;
-                $product['qty'] = $option[0]['qty'];
+                $product['qty'] = $product['qty'];
                 break;
             }
         }
-
+        $qty = $this->getQtyFromOptions($product['sku'], $options);
+        $product['qty'] = $qty;
         return $product;
     }
 
@@ -85,12 +85,10 @@ class FilterProducts
         if (empty($option = $this->getOptionFromProduct($product, $options))) {
             return $product;
         }
-        if (empty($options[0]['qty'])) {
+        if (empty($product['qty'])) {
+            $product['qty'] = 1;
             return $product;
         }
-
-        $product['qty'] = $options[0]['qty'];
-
         $data = [];
         foreach ($product['active_selections'] as $activeSelection) {
             $selectionValueArr = [];
@@ -107,7 +105,7 @@ class FilterProducts
             $data[] = $activeSelection;
         }
         $product['active_selections'] = $data;
-
+        $product['qty'] = $this->getQtyFromOptions($product['sku'], $options);
         return $product;
     }
 
@@ -132,6 +130,7 @@ class FilterProducts
 
         }
         $product['active_selections'] = $data;
+        $product['qty'] = $this->getQtyFromOptions($product['sku'], $options);
 
         return $product;
     }
@@ -143,12 +142,7 @@ class FilterProducts
      */
     private function processSimple(array $product, array $options): array
     {
-        if (empty($options[0]['qty'])) {
-            return $product;
-        }
-
-        $product['qty'] = $options[0]['qty'];
-
+        $product['qty'] = $product['qty'];
         return $product;
     }
 
@@ -240,5 +234,20 @@ class FilterProducts
         }
 
         return $option;
+    }
+
+    /**
+     * @param string $sku
+     * @param array $options
+     * @return int
+     */
+    private function getQtyFromOptions(string $sku, array $options): int
+    {
+        foreach ($options as $opt) {
+            if ($opt['sku'] === $sku) {
+                return $opt['qty'];
+            }
+        }
+        return 0;
     }
 }
