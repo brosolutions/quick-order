@@ -564,6 +564,36 @@ use Magento\Framework\Escaper;
             a.classList.add("delete-item");
             div.appendChild(a);
             li.appendChild(div);
+
+            const linkedProductsArray = productData['linked_products'];
+            if (Array.isArray(linkedProductsArray) && linkedProductsArray.length > 0) {
+                const divTitleExtra = document.createElement("div");
+                divTitleExtra.classList.add("extra-title");
+                const title = document.createElement('p');
+                const titleText = document.createTextNode("This product is no longer manufactured. Please consider products that are closest in specifications and can serve as a suitable alternative:");
+                title.appendChild(titleText);
+                divTitleExtra.appendChild(title);
+                li.appendChild(divTitleExtra);
+            }
+            const divExtra = document.createElement("div");
+            linkedProductsArray.forEach(linkedProduct => {
+                const productDiv = document.createElement('div');
+                const link = document.createElement('a');
+                link.href = linkedProduct['product_url'];
+                link.classList.add('linked-product-link');
+                const image = document.createElement('img');
+                image.src = linkedProduct['thumbnail'];
+                image.alt = linkedProduct['name'];
+                const name = document.createElement('span');
+                name.textContent = linkedProduct['name'];
+                link.appendChild(image);
+                link.appendChild(name);
+                productDiv.appendChild(link);
+                divExtra.appendChild(productDiv);
+            });
+            divExtra.classList.add("extra");
+            li.appendChild(divExtra);
+
             list.appendChild(li);
         }
 
@@ -1802,7 +1832,10 @@ use Magento\Framework\Escaper;
                 })
 
                 const allTrue = allBlocksValid.every(element => element === true);
-                if (allTrue === true) {
+
+                const isManufacturedProduct = getIsManufacturedProduct();
+
+                if (allTrue === true && isManufacturedProduct === false) {
                     addToCart();
                 }
             });
@@ -1953,6 +1986,13 @@ use Magento\Framework\Escaper;
             return isValid;
         }
 
+        function getIsManufacturedProduct() {
+            const productDataFromLocalStorage = getDataFromQuickOrderLocalStorage();
+            return productDataFromLocalStorage.some(productData => {
+                const linkedProductsArray = productData['linked_products'];
+                return Array.isArray(linkedProductsArray) && linkedProductsArray.length > 0;
+            });
+        }
         async function addToCart() {
             let loader = document.querySelector('.quick-order-product-form #loader-wrapper');
             loader.style.display = "flex";
