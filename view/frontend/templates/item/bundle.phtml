@@ -1,0 +1,101 @@
+<?php
+/**
+ * Copyright (c) 2025 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Item\Renderer\BundleRenderer;
+use Magento\Framework\Escaper;
+
+/**
+ * @var BundleRenderer $block
+ * @var Escaper $escaper
+ **/
+
+$_item = $block->getItem();
+$_childItems = $_item->getChildItems();
+$_childItemsQty = $_item->getChildItemsQty();
+$_childItemsOptions = $_item->getChildItemsOptions();
+?>
+    <tr>
+        <?php if (!$_item->isAvailable()): ?>
+            <td class="col name p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Product Name')) ?>">
+                <span class="error-message"> <?= $escaper->escapeHtml(__($_item->getErrorMessage())) ?></span>
+            </td>
+        <?php else: ?>
+            <td class="col name p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Product Name')) ?>">
+                <span
+                    class="product name product-item-name"><strong><?= $escaper->escapeHtml($block->getName()) ?></strong></span>
+            </td>
+        <?php endif; ?>
+        <td class="col sku p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('SKU')) ?>">
+            <span><?= $escaper->escapeHtml($block->prepareSku($block->getSku())) ?></span>
+        </td>
+        <?php if (!$_item->isAvailable()): ?>
+            <td class="col price p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Price')) ?>">
+            </td>
+        <?php else: ?>
+            <td class="col price p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Price')) ?>">
+                <span> <?= $escaper->escapeHtml($block->getItemPriceHtml($_childItemsOptions, $_childItemsQty)) ?></span>
+            </td>
+        <?php endif; ?>
+        <td class="col qty p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Qty')) ?>">
+            <span><?= $escaper->escapeHtml($block->getItemQuantity()) ?></span>
+        </td>
+        <?php if (!$_item->isAvailable()): ?>
+            <td class="col subtotal p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Subtotal')) ?>">
+            </td>
+        <?php else: ?>
+            <td class="col subtotal p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Subtotal')) ?>">
+                <span><?= $escaper->escapeHtml($block->getItemRowTotalHtml($_childItemsOptions, $_childItemsQty)) ?></span>
+            </td>
+        <?php endif; ?>
+    </tr>
+
+<?php if ($_item->isAvailable()): ?>
+    <?php foreach ($_childItems as $childItem): ?>
+        <tr>
+            <?php if ($childItem->getIsNotAvailable()): ?>
+                <td style="border: none;" class="col name p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Product Name')) ?>">
+                    <span class="error-message"> <?= $escaper->escapeHtml(__($childItem->getErrorMessage())) ?></span>
+                </td>
+            <?php else: ?>
+                <td style="border: none;" class="col name p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Product Name')) ?>">
+                    <strong><?= $escaper->escapeHtml($block->getOptionTitle($childItem, $_childItemsOptions)) ?></strong>
+                    <span
+                        class="product name product-item-name"><?= $escaper->escapeHtml($childItem->getName()) ?></span>
+                </td>
+            <?php endif; ?>
+            <td style="border: none;" class="col sku p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('SKU')) ?>">
+                <span><?= $escaper->escapeHtml($block->prepareSku($childItem->getSku())) ?></span>
+            </td>
+            <?php if ($childItem->getIsNotAvailable()): ?>
+                <td style="border: none;" class="col price p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Price')) ?>">
+                </td>
+            <?php else: ?>
+                <td style="border: none;" class="col price p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Price')) ?>">
+                    <span> <?= $escaper->escapeHtml($block->getChildItemPriceHtml($childItem)) ?></span>
+                </td>
+            <?php endif; ?>
+            <td style="border: none;" class="col qty p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Qty')) ?>">
+                <span><?= $escaper->escapeHtml($childItem->getQty()) ?></span>
+            </td>
+            <?php if ($childItem->getIsNotAvailable()): ?>
+                <td style="border: none;" class="col subtotal p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Subtotal')) ?>">
+                </td>
+            <?php else: ?>
+                <td style="border: none;" class="col subtotal p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Subtotal')) ?>">
+                    <span><?= $escaper->escapeHtml($block->getChildItemRowTotalHtml($childItem, $_childItemsQty)) ?></span>
+                </td>
+            <?php endif; ?>
+        </tr>
+    <?php endforeach; ?>
+<?php endif; ?>

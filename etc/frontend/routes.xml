@@ -14,5 +14,11 @@
 		<route frontName="quickorder" id="quickorder">
 			<module name="BroSolutions_QuickOrder"/>
 		</route>
+        <route frontName="automatedorders" id="automatedorders">
+            <module name="BroSolutions_QuickOrder"/>
+        </route>
+            <route id="customer" frontName="customer">
+                <module name="BroSolutions_QuickOrder" before="Magento_Customer"/>
+            </route>
 	</router>
 </config>

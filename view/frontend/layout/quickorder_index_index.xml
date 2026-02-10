@@ -16,7 +16,7 @@
     <body>
         <attribute name="class" value="bro-solutions-quick-order"/>
         <referenceContainer name="content">
-            <block class="BroSolutions\QuickOrder\Block\Quickorder" name="quickorder" template="BroSolutions_QuickOrder::index.phtml"/>
+            <block class="BroSolutions\QuickOrder\Block\Quickorder" name="quickorder" template="BroSolutions_QuickOrder::index.phtml" cacheable="false"/>
         </referenceContainer>
     </body>
 </page>

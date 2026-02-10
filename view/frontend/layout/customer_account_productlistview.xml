@@ -1,0 +1,31 @@
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="customer_account"/>
+    <head>
+        <css src="BroSolutions_QuickOrder::css/styles.css"/>
+    </head>
+    <body>
+        <referenceContainer name="content">
+            <block class="BroSolutions\QuickOrder\Block\Customer\Items"
+                   name="my_list_items" cacheable="false"
+                   template="BroSolutions_QuickOrder::customer/items.phtml">
+
+                <!-- renderer container -->
+                <block class="Magento\Framework\View\Element\RendererList"
+                       name="product.list.items.renderers" cacheable="false">
+
+                    <block class="BroSolutions\QuickOrder\Block\Item\Renderer\SimpleRenderer"
+                           name="default" as="simple" cacheable="false"/>
+
+                    <block class="BroSolutions\QuickOrder\Block\Item\Renderer\BundleRenderer"
+                           as="bundle" cacheable="false"/>
+
+                    <block class="BroSolutions\QuickOrder\Block\Item\Renderer\GroupedRenderer"
+                           as="grouped" cacheable="false"/>
+                </block>
+            </block>
+        </referenceContainer>
+    </body>
+</page>
+
+

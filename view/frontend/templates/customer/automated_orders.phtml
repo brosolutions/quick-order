@@ -1,0 +1,59 @@
+<?php
+/**
+ * Copyright (c) 2026 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Customer\AutomatedOrders;
+use Magento\Framework\Escaper;
+
+/**
+ * @var AutomatedOrders $block
+ * @var Escaper $escaper
+ **/
+
+$orders = $block->getOrders(); ?>
+
+<h2><?= $escaper->escapeHtml(__('My Automated Orders')); ?></h2>
+
+<?php if ($orders->getSize()): ?>
+    <table class="data table">
+        <thead>
+        <tr>
+            <th><?= $escaper->escapeHtml(__('ID')); ?></th>
+            <th><?= $escaper->escapeHtml(__('List Name')); ?></th>
+            <th><?= $escaper->escapeHtml(__('Items')); ?></th>
+            <th><?= $escaper->escapeHtml(__('Store ID')); ?></th>
+            <th><?= $escaper->escapeHtml(__('Created At')); ?></th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($orders as $order): ?>
+            <tr>
+                <td><?= $escaper->escapeHtml($order->getId()); ?></td>
+                <td><?= $escaper->escapeHtml($order->getListName()); ?></td>
+                <td>
+                    <?php $items = json_decode($order->getItems(), true); ?>
+                    <?php if ($items): ?>
+                        <?php foreach ($items as $item): ?>
+                            <p><?= $escaper->escapeHtml($item['sku']) ?>  <?= $escaper->escapeHtml(__(' x ')) ?> <?= $escaper->escapeHtml($item['qty']) ?> </p>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </td>
+                <td><?= $escaper->escapeHtml($order->getStoreId()); ?></td>
+                <td><?= $escaper->escapeHtml($order->getCreatedAt()); ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+<?php else: ?>
+    <p><?= $escaper->escapeHtml(__('No automated orders found.')) ?></p>
+<?php endif; ?>

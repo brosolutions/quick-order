@@ -296,7 +296,9 @@ class ProductManagement implements ProductManagementInterface
                 'require' => $optionInfo[$sel->getOptionId()]['require'],
                 'selection_id' => $sel->getSelectionId(),
                 'title' => $optionTitles[$sel->getOptionId()],
-                'type' => $optionInfo[$sel->getOptionId()]['option_type']
+                'type' => $optionInfo[$sel->getOptionId()]['option_type'],
+                'sku' => $sel->getSku(),
+                'id' => $sel->getEntityId(),
             ];
 
             if ($sel->getIsDefault() === '1') {
@@ -401,7 +403,9 @@ class ProductManagement implements ProductManagementInterface
                     'value_id' => $item['selection_id'] ?? null,
                     'value' => (bool)($item['is_default'] ?? false),
                     'change_qty' => $item['can_change_qty'] ?? false,
-                    'qty' => $item['qty'] ?? 0
+                    'qty' => $item['qty'] ?? 0,
+                    'product_id' => $item['id'] ?? null,
+                    'sku' => $item['sku'] ?? null,
                 ], $dataSet[$key] ?? [])
             ];
         }, array_keys($dataSet));

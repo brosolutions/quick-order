@@ -49,6 +49,13 @@ use Magento\Framework\Escaper;
     <div class="quick-order-product-form-footer">
         <button type="button" class="add-to-cart action primary inline-flex shrink-0 ml-auto  btn btn-primary mt-2 "
         ><?= $escaper->escapeHtml(__('Add to cart'))?></button>
+        <div class="save-list-block">
+            <label for="list-name">List name:</label>
+            <input type="text" id="list-name" name="list-name" required />
+            <button type="button" class="inline-flex btn save-list">Save list</button>
+
+        </div>
+        <div class="list-error" style="display:none;"></div>
     </div>
 </div>
 
@@ -70,6 +77,8 @@ use Magento\Framework\Escaper;
         const apiSearchProductUrl = "<?= $escaper->escapeUrl($block->getQuickOrderSearchProductUrl()); ?>";
         const apiGetProductUrl = "<?= $escaper->escapeUrl($block->getQuickOrderGetProductUrl()); ?>";
         const apiAddToCartUrl = "<?= $escaper->escapeUrl($block->getAddToCartUrl()); ?>";
+        const apiSaveListUrl = "<?= $escaper->escapeUrl($block->getSaveListUrl()); ?>";
+        const isCustomerLogIn = "<?= $escaper->escapeUrl($block->isCustomerLoggedIn()); ?>";
         const uploadFileUrl = "<?= $escaper->escapeUrl($block->getUploadFileUrl()); ?>";
         const formKey = (typeof hyva === 'object') ? hyva.getFormKey() : getCookie('form_key');
         const mediaUrl = "<?= $escaper->escapeUrl($block->getMediaUrl()); ?>";
@@ -85,6 +94,7 @@ use Magento\Framework\Escaper;
         });
         addEventListeners();
         addEventListenerAddToCart();
+        addEventListenersDefault();
 
         let debounceTimer;
 
@@ -785,7 +795,6 @@ use Magento\Framework\Escaper;
             const selectedSelection = {};
             let qty;
             let price;
-
             const options = parentBlock.querySelectorAll('input[type="radio"], input[type="checkbox"], select');
 
             if (updateQtyField === true && input['type'] === 'radio') {
@@ -807,6 +816,7 @@ use Magento\Framework\Escaper;
 
             if (options.length > 0 && options[0]['type'] !== 'select-multiple') {
                 options.forEach(function (option) {
+                    let data = getQtyByInputId(product, option['id'], option['name']);
                     let Obj = {};
                     selectedSelectionIdTemp = options[0].name;
                     Obj.value_id = option.value;
@@ -814,14 +824,19 @@ use Magento\Framework\Escaper;
                     if (updateQtyField === false && option.checked) {
                         Obj.qty = input['value'];
                     } else {
-                        Obj.qty = getQtyByInputId(product, option['id'], option['name']).qty;
-                        Obj.change_qty = getQtyByInputId(product, option['id'], option['name']).selectionCanChangeQty;
+                        Obj.qty = data.qty;
                     }
+                    Obj.product_id = data.productId;
+                    Obj.sku = data.sku;
+                    Obj.change_qty = data.selectionCanChangeQty;
+
                     selectedSelectionValueTemp.push(Obj);
                 });
             } else {
+
                 const select = parentBlock.querySelector('select');
                 Array.from(select.options).forEach(function (option) {
+                    let data = getQtyByInputId(product, option['id'], option['name']);
                     let Obj = {};
                     selectedSelectionIdTemp = options[0].name;
                     Obj.value_id = option.value;
@@ -829,9 +844,12 @@ use Magento\Framework\Escaper;
                     if (updateQtyField === false && option.selected) {
                         Obj.qty = input['value'];
                     } else {
-                        qty = getQtyByInputId(product, option['value'], options[0].name).qty;
-                        Obj.qty = qty;
+                        let data = getQtyByInputId(product, option['id'], option['name']);
+                        Obj.qty = data.qty;
                     }
+                    Obj.product_id = data.productId;
+                    Obj.sku = data.sku;
+
                     selectedSelectionValueTemp.push(Obj);
                 });
             }
@@ -847,6 +865,7 @@ use Magento\Framework\Escaper;
                     active = true;
                 }
                 if (active === false) {
+
                     newActiveSelections.push(activeSelectionValue);
                 }
             });
@@ -912,19 +931,25 @@ use Magento\Framework\Escaper;
             const filteredActiveSelectionsArray = activeSelectionsArray.filter(item => item.id === parseInt(name));
             let qty;
             let selectionCanChangeQty;
+            let productId;
+            let sku;
 
             if (Array.isArray(filteredActiveSelectionsArray[0]['selection_value'])) {
                 filteredActiveSelectionsArray[0]['selection_value'].forEach(selectionValue => {
                     if (parseInt(selectionValue['value_id']) === parseInt(id)) {
                         qty = selectionValue['qty'];
                         selectionCanChangeQty = selectionValue['change_qty'];
+                        productId = selectionValue['product_id'];
+                        sku = selectionValue['sku'];
                     }
                 })
             }
 
             return {
                 qty,
-                selectionCanChangeQty
+                selectionCanChangeQty,
+                productId,
+                sku
             };
         }
 
@@ -932,7 +957,19 @@ use Magento\Framework\Escaper;
             const parentElement = input.closest('[data-pid]');
             const pid = parentElement.getAttribute('data-pid');
             const product = getDataFromQuickOrderLocalStorageByPid(pid);
-            const selectedSelection = {id: input.name, qty: input.value};
+            const selectionArray = product['quick_grouped_products'];
+            let productId;
+            let sku;
+
+            selectionArray.forEach(value => {
+                    if (parseInt(value['entity_id']) === parseInt(input.name)) {
+                        sku = value['sku'];
+                        productId = value['entity_id'];
+                    }
+            })
+
+            const selectedSelection = {id: input.name, qty: input.value, sku: sku, productId: productId };
+
             const newActiveSelections = [];
             const activeSelections = product['active_selections'];
 
@@ -950,9 +987,6 @@ use Magento\Framework\Escaper;
 
             newActiveSelections.push(selectedSelection);
             updateDataInQuickOrderLocalStorage(pid, 'active_selections', newActiveSelections);
-
-            const selectionArray = product['quick_grouped_products'];
-
             let price = 0;
             selectionArray.forEach(value => {
                 newActiveSelections.forEach(newActiveSelection => {
@@ -1786,6 +1820,115 @@ use Magento\Framework\Escaper;
             return option;
         }
 
+        function addEventListenerSaveListError() {
+            document.querySelector('.save-list').addEventListener('click', function () {
+                const input = document.getElementById('list-name');
+                const error = document.querySelector('.list-error');
+
+                if (!input.value.trim()) {
+                    error.textContent = 'Please enter a list name.';
+                    error.style.display = 'inline';
+                    input.classList.add('mage-error');
+                    return;
+                }
+
+                error.style.display = 'none';
+                input.classList.remove('mage-error');
+
+                console.log('List name:', input.value);
+            });
+        }
+
+
+        function addEventListenerSaveList() {
+            const button = document.querySelector('.quick-order-product-form-footer button.save-list');
+            button.addEventListener('click', function () {
+                saveList();
+            });
+        }
+
+        async function saveList() {
+            const input = document.getElementById('list-name');
+            const listName = input.value.trim();
+            if (!input || !listName) {
+                return;
+            }
+
+            if (!isCustomerLogIn) {
+                alert('This functionality is available only to logged-in users. Please log in and try again.');
+                return;
+            }
+
+            const storedProductData = localStorage.getItem('quick_order_local_storage');
+            const parsedData = JSON.parse(storedProductData);
+            if (!Array.isArray(parsedData) || parsedData.length === 0) {
+                alert('There are no selected products. Please select products and try again.');
+                return;
+            }
+
+            const isConfirmed = confirm('Are you sure you want to save this list?');
+            if (!isConfirmed) {
+                loader.style.display = "none";
+                return;
+            }
+
+            let loader = document.querySelector('.quick-order-product-form #loader-wrapper');
+            loader.style.display = "flex";
+
+            const storedProductDataFiltered = parsedData.map(item => ({
+                entity_id: item.entity_id,
+                sku: item.sku,
+                type_id: item.type_id,
+                qty: item.qty,
+
+                active_selections: item.active_selections,
+                attributes_codes: item.attributes
+                    ? item.attributes.map(attr => attr.attribute_code)
+                    : null,
+                attributes_labels: item.attributes
+                    ? item.attributes.map(attr => attr.frontend_label)
+                    : null,
+                active_product: item.active_product
+                    ? {
+                        sku: item.active_product.sku,
+                        qty: item.active_product.qty,
+                        options: item.active_product.options,
+                        product_id: item.active_product.entity_id,
+                    }
+                    : null
+            }));
+
+            console.log(storedProductDataFiltered);
+
+            const formData = new FormData();
+            formData.append('jsonData', JSON.stringify(storedProductDataFiltered))
+            formData.append('list_name', listName);
+            if (storedProductData) {
+                fetch(apiSaveListUrl + '?form_key=' + formKey, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(result => {
+                        if (result.success) {
+                            alert(result.message || 'List saved successfully');
+                        } else {
+                            alert(result.message || 'Failed to save list');
+                        }
+                        loader.style.display = "none";
+                    })
+                    .catch(error => {
+                        console.error('Error sending list', error);
+                        alert('Something went wrong while saving the list');
+                    });
+            }
+        }
+
         function addEventListenerAddToCart() {
 
             const button = document.querySelector('.quick-order-product-form-footer button');
@@ -2038,6 +2181,11 @@ use Magento\Framework\Escaper;
             addEventListenerForBundleSelectionChange();
             addEventListenerForBundleSelectionQtyChange();
             addEventListenerForGroupedSelectionChange();
+        }
+
+        function addEventListenersDefault() {
+            addEventListenerSaveList();
+            addEventListenerSaveListError();
         }
     });
 </script>

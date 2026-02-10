@@ -13,25 +13,21 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Controller\Index;
 
+use BroSolutions\QuickOrder\Service\SaveProductListToAccount;
+use Exception;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\Request\Http;
-use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Data\Form\FormKey\Validator as FormKeyValidator;
-use Exception;
-use BroSolutions\QuickOrder\Model\CartManagement;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
  * @link       https://www.brosolutions.net/
  */
-class AddToCart implements HttpPostActionInterface
+class CreateAutomatedOrder implements HttpPostActionInterface
 {
-    /**
-     * @var JsonFactory
-     */
-    private $resultJsonFactory;
-
     /**
      * @var Http
      */
@@ -43,59 +39,55 @@ class AddToCart implements HttpPostActionInterface
     private $formKeyValidator;
 
     /**
-     * @var CartManagement
+     * @var JsonFactory
      */
-    private $cartManagement;
+    private $resultJsonFactory;
+
+    /**
+     * @var SaveProductListToAccount
+     */
+    private $saveProductListToAccount;
 
     /**
      * @param Http $request
-     * @param JsonFactory $resultJsonFactory
      * @param FormKeyValidator $formKeyValidator
-     * @param CartManagement $cartManagement
+     * @param JsonFactory $resultJsonFactory
+     * @param SaveProductListToAccount $saveProductListToAccount
      */
     public function __construct(
         Http             $request,
-        JsonFactory      $resultJsonFactory,
         FormKeyValidator $formKeyValidator,
-        CartManagement   $cartManagement,
+        JsonFactory      $resultJsonFactory,
+        SaveProductListToAccount $saveProductListToAccount
     ) {
         $this->request = $request;
-        $this->resultJsonFactory = $resultJsonFactory;
         $this->formKeyValidator = $formKeyValidator;
-        $this->cartManagement = $cartManagement;
+        $this->resultJsonFactory = $resultJsonFactory;
+        $this->saveProductListToAccount = $saveProductListToAccount;
     }
 
     /**
-     * Add to cart
-     *
-     * @return ResultInterface
+     * @inheritdoc
      */
-    public function execute(): ResultInterface
+    public function execute()
     {
         $resultJson = $this->resultJsonFactory->create();
+
         if (!$this->formKeyValidator->validate($this->request)) {
-            return $resultJson->setData(
-                [
-                    'success' => false,
-                    'message' => __('Invalid Form Key. Please refresh the page.')
-                ]
-            );
+            return $resultJson->setData(['success' => false,
+                'message' => __('Invalid Form Key. Please refresh the page.')
+            ]);
         }
 
         try {
 
-            $this->cartManagement->addToCart($this->request->getParam('jsonData'));
-        } catch (Exception $e) {
-            return $resultJson->setData(
-                [
-                    'success' => false,
-                    'message' => $e->getMessage()
-                ]
-            );
-        }
+            $data = $this->saveProductListToAccount->execute($this->request->getParam('jsonData'));
 
-        return $resultJson->setData([
-            'success' => true
-        ]);
+        } catch (Exception | LocalizedException| NoSuchEntityException $e) {
+            return $resultJson->setData([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 }

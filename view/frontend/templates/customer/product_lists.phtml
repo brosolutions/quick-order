@@ -1,0 +1,54 @@
+<?php
+/**
+ * Copyright (c) 2025 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Customer\ProductLists;
+use Magento\Framework\Escaper;
+
+/**
+ * @var ProductLists $block
+ * @var Escaper $escaper
+ **/
+?>
+<?php $_lists = $block->getLists(); ?>
+<?php if ($_lists && count($_lists)) : ?>
+    <h2 id="my-orders-title" class="text-2xl mb-6"><?= $escaper->escapeHtml(__('Lists')) ?></h2>
+    <div class="table-wrapper orders-history overflow-x-auto card mb-4">
+        <table class="data table table-order-items history w-full sm:table-fixed lg:table-auto" id="my-orders-table">
+            <thead class="text-sm">
+            <tr>
+                <th scope="col" class="col id p-2 text-start"><?= $escaper->escapeHtml(__('List name')) ?></th>
+                <th scope="col" class="col date p-2 text-start"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                <th scope="col" class="col actions p-2 text-start"><?= $escaper->escapeHtml(__('Action')) ?></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($_lists as $_list) : ?>
+                <tr>
+                    <td data-th="<?= $escaper->escapeHtml(__('Order #')) ?>"
+                        class="col id p-2 text-start font-normal"><?= $escaper->escapeHtml($_list['list_name']) ?></td>
+                    <td data-th="<?= $escaper->escapeHtml(__('Date')) ?>" class="col date p-2 text-start font-normal"><?= /* @noEscape */
+                        $block->formatDate($_list['created_at']) ?></td>
+                    <td data-th="<?= $escaper->escapeHtml(__('Actions')) ?>" class="col actions p-2 text-start font-normal">
+                        <a href="<?= $escaper->escapeUrl($block->getViewUrl($_list)) ?>" class="action view">
+                            <span><?= $escaper->escapeHtml(__('View List')) ?></span>
+                        </a>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+<?php else : ?>
+    <div class="message info empty"><span><?= $escaper->escapeHtml($block->getEmptyListMessage()) ?></span></div>
+<?php endif ?>

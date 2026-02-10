@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<!--
+  * Copyright (c) 2025 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="customer_account_navigation">
+            <block class="Magento\Customer\Block\Account\Delimiter"
+                   name="customer-account-navigation-delimiter-product-list-start"
+                   template="Magento_Customer::account/navigation-delimiter.phtml"
+                   ifconfig="brosolution_quick_order/scheduled_automated_orders/enable"
+                   cacheable="false"
+            />
+            <block class="Magento\Customer\Block\Account\SortLinkInterface"
+                   name="customer-product-list-link"
+                   after="customer-account-navigation-delimiter-product-list-start"
+                   ifconfig="brosolution_quick_order/scheduled_automated_orders/enable"
+                   cacheable="false">
+                <arguments>
+                    <argument name="path" xsi:type="string">customer/account/productlists</argument>
+                    <argument name="label" xsi:type="string">Product list</argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+        <referenceBlock name="customer_account_navigation">
+            <block class="Magento\Customer\Block\Account\SortLinkInterface"
+                   name="customer-automated-orders-link"
+                   after="customer-product-list-link"
+                   ifconfig="brosolution_quick_order/scheduled_automated_orders/enable"
+                   cacheable="false">
+                <arguments>
+                    <argument name="path" xsi:type="string">customer/account/automatedorders</argument>
+                    <argument name="label" xsi:type="string">Scheduled automated orders</argument>
+                </arguments>
+            </block>
+            <block class="Magento\Customer\Block\Account\Delimiter"
+                   name="customer-account-navigation-delimiter-automatedorders-end"
+                   template="Magento_Customer::account/navigation-delimiter.phtml"
+                   after="customer-automated-orders-link"
+                   ifconfig="brosolution_quick_order/scheduled_automated_orders/enable"
+                   cacheable="false"
+            />
+        </referenceBlock>
+    </body>
+</page>
+

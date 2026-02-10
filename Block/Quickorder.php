@@ -13,13 +13,14 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Block;
 
+use Magento\Customer\Model\Session as CustomerSession;
+use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\StoreManager;
-use Magento\Framework\UrlInterface;
-use Magento\Framework\Data\Form\FormKey;
-use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
@@ -39,20 +40,28 @@ class Quickorder extends Template
     private $formKey;
 
     /**
+     * @var CustomerSession
+     */
+    private $customerSession;
+
+    /**
      * @param Context $context
      * @param StoreManager $storeManager
      * @param FormKey $formKey
+     * @param CustomerSession $customerSession
      * @param array $data
      */
     public function __construct(
         Context $context,
         StoreManager $storeManager,
         FormKey $formKey,
+        CustomerSession $customerSession,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->storeManager = $storeManager;
         $this->formKey = $formKey;
+        $this->customerSession = $customerSession;
     }
 
     /**
@@ -109,20 +118,24 @@ class Quickorder extends Template
      * Get quick order search product url
      *
      * @return string
+     * @throws NoSuchEntityException
      */
     public function getQuickOrderSearchProductUrl()
     {
-        return $this->getUrl('rest/'. $this->storeManager->getStore()->getCode() .'/V1/bro-solutions-quick-search/search-product');
+        return $this->getUrl('rest/' . $this->storeManager->getStore()->getCode() .
+            '/V1/bro-solutions-quick-search/search-product');
     }
 
     /**
      * Get quick order get product url
      *
      * @return string
+     * @throws NoSuchEntityException
      */
     public function getQuickOrderGetProductUrl()
     {
-        return $this->getUrl('rest/'. $this->storeManager->getStore()->getCode() .'/V1/bro-solutions-quick-search/get-product');
+        return $this->getUrl('rest/' . $this->storeManager->getStore()->getCode() .
+            '/V1/bro-solutions-quick-search/get-product');
     }
 
     /**
@@ -171,7 +184,7 @@ class Quickorder extends Template
      *
      * @return string
      */
-    public function getMediaUrl()
+    public function getMediaUrl() : string
     {
         return $this->storeManager->getStore()->getBaseUrl(UrlInterface::URL_TYPE_MEDIA);
     }
@@ -181,8 +194,28 @@ class Quickorder extends Template
      *
      * @return string
      */
-    public function getUrlToCartRedirect()
+    public function getUrlToCartRedirect() : string
     {
         return $this->getUrl('checkout/cart');
+    }
+
+    /**
+     * Get automated orders url
+     *
+     * @return string
+     */
+    public function getSaveListUrl() : string
+    {
+        return $this->getUrl('quickorder/index/savelist');
+    }
+
+    /**
+     * Check if customer is logg in
+     *
+     * @return bool
+     */
+    public function isCustomerLoggedIn() : bool
+    {
+        return $this->customerSession->isLoggedIn();
     }
 }

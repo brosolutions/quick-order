@@ -1,0 +1,89 @@
+<?php
+/**
+ * Copyright (c) 2025 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Customer\Items;
+use Magento\Framework\Escaper;
+
+/**
+ * @var Items $block
+ * @var Escaper $escaper
+ **/
+
+?>
+<h2 id="my-orders-title" class="text-2xl mb-6"><?= $escaper->escapeHtml(__('Items')) ?></h2>
+<div class="table-wrapper order-items overflow-x-auto card mb-4">
+    <table class="data table table-order-items w-full sm:table-fixed lg:table-auto" id="my-orders-table" summary="<?= $escaper->escapeHtml(__('Items')) ?>">
+        <thead class="text-sm">
+        <tr>
+            <th class="col name p-2 text-start"><?= $escaper->escapeHtml(__('Product Name')) ?></th>
+            <th class="col sku p-2 text-start"><?= $escaper->escapeHtml(__('SKU')) ?></th>
+            <th class="col price p-2 text-start"><?= $escaper->escapeHtml(__('Price')) ?></th>
+            <th class="col qty p-2 text-start"><?= $escaper->escapeHtml(__('Qty')) ?></th>
+            <th class="col subtotal p-2 text-start"><?= $escaper->escapeHtml(__('Subtotal')) ?></th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <?php foreach ($block->getItems() as $item): ?>
+            <?php if (!empty($item->getType() !== 'groupped')): ?>
+                <?= $block->renderItem($item) // @codingStandardsIgnoreLine ?>
+            <?php endif ?>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+<div class="list-actions-block">
+    <!-- CLONE LIST -->
+    <form action="<?= $escaper->escapeUrl($block->getCloneListUrl()) ?>"
+          method="post"
+          class="inline-form">
+
+        <?= $block->getBlockHtml('formkey'); ?>
+
+        <button type="submit" class="action clone btn">
+            <?= $escaper->escapeHtml(__('Clone List')) ?>
+        </button>
+    </form>
+
+    <!-- DELETE LIST -->
+    <form action="<?= $escaper->escapeUrl($block->getDeleteListUrl()) ?>"
+          method="post"
+          onsubmit="return confirm('<?= $escaper->escapeJs(__('Are you sure you want to delete this list?')) ?>');">
+        <?= $block->getBlockHtml('formkey'); ?>
+
+        <button type="submit" class="action delete btn">
+            <?= $escaper->escapeHtml(__('Delete List')) ?>
+        </button>
+    </form>
+
+    <!-- CHANGE LIST NAME -->
+    <form class="block-change-list-name " action="<?= $escaper->escapeUrl($block->getChangeListNameUrl()) ?>"
+          method="post">
+        <?= $block->getBlockHtml('formkey'); ?>
+        <input type="text" name="list_name" class="form-input w-full" required/>
+        <button type="submit" class="action btn">
+            <?= $escaper->escapeHtml(__('Change list name')) ?>
+        </button>
+    </form>
+
+    <!-- ADD TO CART -->
+    <form action="<?= $escaper->escapeUrl($block->getAddToCartUrl()) ?>"
+          method="post">
+        <?= $block->getBlockHtml('formkey'); ?>
+
+        <button type="submit" class="action delete btn">
+            <?= $escaper->escapeHtml(__('Add to cart')) ?>
+        </button>
+    </form>
+</div>

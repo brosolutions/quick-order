@@ -13,19 +13,21 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Controller\Index;
 
+use BroSolutions\QuickOrder\Service\SaveProductListToAccount;
+use Exception;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\Request\Http;
-use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
+use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Data\Form\FormKey\Validator as FormKeyValidator;
-use Exception;
-use BroSolutions\QuickOrder\Model\CartManagement;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Psr\Log\LoggerInterface;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
  * @link       https://www.brosolutions.net/
  */
-class AddToCart implements HttpPostActionInterface
+class SaveList implements HttpPostActionInterface
 {
     /**
      * @var JsonFactory
@@ -43,26 +45,34 @@ class AddToCart implements HttpPostActionInterface
     private $formKeyValidator;
 
     /**
-     * @var CartManagement
+     * @var SaveProductListToAccount
      */
-    private $cartManagement;
+    private $saveProductListToAccount;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
 
     /**
      * @param Http $request
      * @param JsonFactory $resultJsonFactory
      * @param FormKeyValidator $formKeyValidator
-     * @param CartManagement $cartManagement
+     * @param SaveProductListToAccount $saveProductListToAccount
+     * @param LoggerInterface $logger
      */
     public function __construct(
         Http             $request,
         JsonFactory      $resultJsonFactory,
         FormKeyValidator $formKeyValidator,
-        CartManagement   $cartManagement,
+        SaveProductListToAccount   $saveProductListToAccount,
+        LoggerInterface $logger
     ) {
         $this->request = $request;
         $this->resultJsonFactory = $resultJsonFactory;
         $this->formKeyValidator = $formKeyValidator;
-        $this->cartManagement = $cartManagement;
+        $this->saveProductListToAccount = $saveProductListToAccount;
+        $this->logger = $logger;
     }
 
     /**
@@ -83,13 +93,16 @@ class AddToCart implements HttpPostActionInterface
         }
 
         try {
-
-            $this->cartManagement->addToCart($this->request->getParam('jsonData'));
-        } catch (Exception $e) {
+            $this->saveProductListToAccount->execute(
+                $this->request->getParam('jsonData'),
+                $this->request->getParam('list_name')
+            );
+        } catch (Exception|NoSuchEntityException $e) {
+            $this->logger->error(sprintf('Error saving list: %s', $e->getMessage()), $e->getTrace());
             return $resultJson->setData(
                 [
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => 'Something went wrong while saving the list'
                 ]
             );
         }

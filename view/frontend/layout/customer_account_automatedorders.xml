@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!--
+ ~ Copyright (c) 2022 TechDivision GmbH
+ ~ All rights reserved
+ ~
+ ~ This product includes proprietary software developed at TechDivision GmbH, Germany
+ ~ For more information see https://www.techdivision.com/
+ ~
+ ~ To obtain a valid license for using this software please contact us at
+ ~ license@techdivision.com
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="customer_account"/>
+    <body>
+        <referenceBlock name="page.main.title">
+            <action method="setPageTitle">
+                <argument translate="true" name="title" xsi:type="string">Scheduled automated orders</argument>
+            </action>
+        </referenceBlock>
+        <referenceBlock name="customer_account_navigation">
+            <action method="setActive">
+                <argument name="path" xsi:type="string">customer/account/automatedorders</argument>
+            </action>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block class="BroSolutions\QuickOrder\Block\Customer\AutomatedOrders"
+                   name="brosolutions_automated_orders_list"
+                   template="BroSolutions_QuickOrder::customer/automated_orders.phtml"/>
+        </referenceContainer>
+    </body>
+</page>
