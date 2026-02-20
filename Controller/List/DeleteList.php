@@ -21,6 +21,7 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\Result\RedirectFactory;
+use Magento\Framework\Data\Form\FormKey\Validator as FormKeyValidator;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Message\ManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -68,6 +69,11 @@ class DeleteList implements HttpPostActionInterface
     private $logger;
 
     /**
+     * @var FormKeyValidator
+     */
+    private $formKeyValidator;
+
+    /**
      * @param RequestInterface $request
      * @param RedirectFactory $redirectFactory
      * @param CollectionFactory $collectionFactory
@@ -75,6 +81,7 @@ class DeleteList implements HttpPostActionInterface
      * @param CustomerSession $customerSession
      * @param ManagerInterface $messageManager
      * @param LoggerInterface $logger
+     * @param FormKeyValidator $formKeyValidator
      */
     public function __construct(
         RequestInterface $request,
@@ -83,7 +90,8 @@ class DeleteList implements HttpPostActionInterface
         ProductListResource $resource,
         CustomerSession $customerSession,
         ManagerInterface $messageManager,
-        LoggerInterface            $logger
+        LoggerInterface  $logger,
+        FormKeyValidator $formKeyValidator,
     ) {
         $this->request = $request;
         $this->redirectFactory = $redirectFactory;
@@ -92,6 +100,7 @@ class DeleteList implements HttpPostActionInterface
         $this->customerSession = $customerSession;
         $this->messageManager = $messageManager;
         $this->logger = $logger;
+        $this->formKeyValidator = $formKeyValidator;
     }
 
     /**
@@ -107,6 +116,10 @@ class DeleteList implements HttpPostActionInterface
                 return $resultRedirect->setPath('customer/account/login');
             }
 
+            if (!$this->formKeyValidator->validate($this->request)) {
+                throw new LocalizedException(__('Invalid Form Key. Please refresh the page.'));
+            }
+
             if (!$listId) {
                 throw new LocalizedException(__('Invalid list.'));
             }
@@ -117,12 +130,12 @@ class DeleteList implements HttpPostActionInterface
             /** @var ProductList $list */
             $list = $collection->getFirstItem();
 
-            if ((int)$list->getCustomerId() !== (int)$this->customerSession->getCustomerId()) {
-                throw new LocalizedException(__('You are not allowed to delete this list.'));
-            }
-
             if (!$list->getId()) {
                 throw new LocalizedException(__('The list no longer exists.'));
+            }
+
+            if ((int)$list->getCustomerId() !== (int)$this->customerSession->getCustomerId()) {
+                throw new LocalizedException(__('You are not allowed to delete this list.'));
             }
 
             $this->resource->delete($list);

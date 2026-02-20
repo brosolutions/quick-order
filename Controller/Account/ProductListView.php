@@ -19,6 +19,7 @@ use Magento\Customer\Controller\AbstractAccount;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\View\Result\Page;
 use Magento\Framework\View\Result\PageFactory;
 
 /**
@@ -73,7 +74,7 @@ class ProductListView extends AbstractAccount implements HttpGetActionInterface
      *
      * @ingeritdoc
      */
-    public function execute()
+    public function execute(): ?Page
     {
         if (!$this->getScheduledAutomatedOrdersEnabled->execute()) {
             $this->messageManager->addErrorMessage(

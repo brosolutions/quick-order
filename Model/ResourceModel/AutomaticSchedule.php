@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -16,15 +16,35 @@ namespace BroSolutions\QuickOrder\Model\ResourceModel;
 use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 
 /**
- * @copyright  Copyright (c) 2025 BroSolutions
+ * @copyright  Copyright (c) 2026 BroSolutions
  * @link       https://www.brosolutions.net/
  */
-class ProductList extends AbstractDb
+class AutomaticSchedule extends AbstractDb
 {
     /**
      * @var string
      */
-    public const QUICK_ORDER_LIST_TABLE = 'brosolutions_quickorder_list';
+    public const STATUS_ACTIVE   = 'active';
+
+    /**
+     * @var string
+     */
+    public const STATUS_PAUSED   = 'paused';
+
+    /**
+     * @var string
+     */
+    public const STATUS_ERROR    = 'error';
+
+    /**
+     * @var string
+     */
+    public const STATUS_DISABLED = 'disabled';
+
+    /**
+     * @var string
+     */
+    public const QUICK_ORDER_AUTOMATIC_SCHEDULE_TABLE = 'brosolutions_quickorder_schedule';
 
     /**
      * @inheritdoc
@@ -32,8 +52,8 @@ class ProductList extends AbstractDb
     protected function _construct()
     {
         $this->_init(
-            self::QUICK_ORDER_LIST_TABLE,
-            'id'
+            self::QUICK_ORDER_AUTOMATIC_SCHEDULE_TABLE,
+            'schedule_id'
         );
     }
 }

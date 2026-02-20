@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Block\Item\Renderer;
 
-use BroSolutions\QuickOrder\Model\ProductListItem;
+use BroSolutions\QuickOrder\Model\Item\ProductListItem;
 use Magento\Framework\Pricing\Helper\Data as PricingHelper;
 use Magento\Framework\Stdlib\StringUtils;
 use Magento\Framework\View\Element\Template;

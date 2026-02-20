@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Service;
 
+use BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem\CollectionFactory as ProductListItemCollectionFactory;
 use Exception;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
-use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Serialize\Serializer\Json;
 
 /**
@@ -25,8 +25,6 @@ use Magento\Framework\Serialize\Serializer\Json;
  */
 class CreateDataAddListToCart
 {
-    /** @var ResourceConnection */
-    private $resource;
 
     /** @var CollectionFactory */
     private $productCollectionFactory;
@@ -38,21 +36,26 @@ class CreateDataAddListToCart
     private $productRepository;
 
     /**
-     * @param ResourceConnection $resource
+     * @var ProductListItemCollectionFactory
+     */
+    private $productListCollectionFactory;
+
+    /**
      * @param CollectionFactory $productCollectionFactory
      * @param Json $json
      * @param ProductRepositoryInterface $productRepository
+     * @param ProductListItemCollectionFactory $productListCollectionFactory
      */
     public function __construct(
-        ResourceConnection $resource,
         CollectionFactory $productCollectionFactory,
         Json $json,
-        ProductRepositoryInterface $productRepository
+        ProductRepositoryInterface $productRepository,
+        ProductListItemCollectionFactory $productListCollectionFactory
     ) {
-        $this->resource = $resource;
         $this->productCollectionFactory = $productCollectionFactory;
         $this->json = $json;
         $this->productRepository = $productRepository;
+        $this->productListCollectionFactory = $productListCollectionFactory;
     }
 
     /**
@@ -91,16 +94,13 @@ class CreateDataAddListToCart
      */
     private function loadRows(int $listId): array
     {
-        $connection = $this->resource->getConnection();
-        $table = $this->resource->getTableName('brosolutions_product_list');
+        $collection = $this->productListCollectionFactory->create();
 
-        return (array)$connection->fetchAll(
-            $connection->select()
-                ->from($table)
-                ->where('list_id = ?', $listId)
-                ->order('parent_id ASC')
-                ->order('id ASC')
-        );
+        $collection->addFieldToFilter('list_id', $listId)
+            ->setOrder('parent_id', 'ASC')
+            ->setOrder('id', 'ASC');
+
+        return $collection->getData();
     }
 
     /**

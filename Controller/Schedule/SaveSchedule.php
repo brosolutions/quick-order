@@ -11,14 +11,15 @@
  */
 declare(strict_types=1);
 
-namespace BroSolutions\QuickOrder\Controller\List;
+namespace BroSolutions\QuickOrder\Controller\Schedule;
 
 use BroSolutions\QuickOrder\Model\ProductList;
-use BroSolutions\QuickOrder\Model\ResourceModel\ProductList as ProductListResource;
 use BroSolutions\QuickOrder\Model\ResourceModel\ProductList\CollectionFactory;
+use BroSolutions\QuickOrder\Service\SaveSchedule as ServiceSaveSchedule;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpPostActionInterface;
-use Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Data\Form\FormKey\Validator as FormKeyValidator;
@@ -31,10 +32,10 @@ use Throwable;
  * @copyright  Copyright (c) 2025 BroSolutions
  * @link       https://www.brosolutions.net/
  */
-class ChangeListName implements HttpPostActionInterface
+class SaveSchedule implements HttpPostActionInterface
 {
     /**
-     * @var RequestInterface
+     * @var Http
      */
     private $request;
 
@@ -47,11 +48,6 @@ class ChangeListName implements HttpPostActionInterface
      * @var CollectionFactory
      */
     private $collectionFactory;
-
-    /**
-     * @var ProductListResource
-     */
-    private $resource;
 
     /**
      * @var CustomerSession
@@ -69,48 +65,58 @@ class ChangeListName implements HttpPostActionInterface
     private $logger;
 
     /**
+     * @var SaveSchedule
+     */
+    private $saveSchedule;
+
+    /**
      * @var FormKeyValidator
      */
     private $formKeyValidator;
 
     /**
-     * @param RequestInterface $request
+     * @param Http $request
+     * @param JsonFactory $resultJsonFactory
+     * @param FormKeyValidator $formKeyValidator
      * @param RedirectFactory $redirectFactory
      * @param CollectionFactory $collectionFactory
-     * @param ProductListResource $resource
      * @param CustomerSession $customerSession
      * @param ManagerInterface $messageManager
      * @param LoggerInterface $logger
-     * @param FormKeyValidator $formKeyValidator
+     * @param ServiceSaveSchedule $saveSchedule
      */
     public function __construct(
-        RequestInterface $request,
+        Http             $request,
+        JsonFactory      $resultJsonFactory,
+        FormKeyValidator $formKeyValidator,
         RedirectFactory $redirectFactory,
         CollectionFactory $collectionFactory,
-        ProductListResource $resource,
         CustomerSession $customerSession,
         ManagerInterface $messageManager,
-        LoggerInterface            $logger,
-        FormKeyValidator $formKeyValidator,
+        LoggerInterface  $logger,
+        ServiceSaveSchedule $saveSchedule,
     ) {
         $this->request = $request;
         $this->redirectFactory = $redirectFactory;
         $this->collectionFactory = $collectionFactory;
-        $this->resource = $resource;
         $this->customerSession = $customerSession;
         $this->messageManager = $messageManager;
         $this->logger = $logger;
+        $this->saveSchedule = $saveSchedule;
         $this->formKeyValidator = $formKeyValidator;
     }
 
     /**
-     * @inheritdoc
+     * Add to cart
+     *
+     * @return Redirect
      */
     public function execute(): Redirect
     {
-        $resultRedirect = $this->redirectFactory->create();
-        $listId = (int)$this->request->getParam('list_id');
+        $params = $this->request->getParams();
 
+        $resultRedirect = $this->redirectFactory->create();
+        $listId = (int)$params['list_id'];
         try {
             if (!$this->customerSession->isLoggedIn()) {
                 return $resultRedirect->setPath('customer/account/login');
@@ -120,10 +126,8 @@ class ChangeListName implements HttpPostActionInterface
                 throw new LocalizedException(__('Invalid Form Key. Please refresh the page.'));
             }
 
-            $newName = trim((string)$this->request->getParam('list_name'));
-
-            if (!$listId || $newName === '') {
-                $this->messageManager->addErrorMessage(__('Invalid list name.'));
+            if (!$listId) {
+                throw new LocalizedException(__('Invalid list.'));
             }
 
             $collection = $this->collectionFactory->create();
@@ -132,33 +136,28 @@ class ChangeListName implements HttpPostActionInterface
             /** @var ProductList $list */
             $list = $collection->getFirstItem();
 
-            if (!$list->getId()) {
+            if (!$listId = $list->getId()) {
                 throw new LocalizedException(__('The list no longer exists.'));
             }
 
             if ((int)$list->getCustomerId() !== (int)$this->customerSession->getCustomerId()) {
-                throw new LocalizedException(__('You are not allowed to edit this list.'));
+                throw new LocalizedException(__('You are not allowed to create schedule for this list.'));
             }
 
-            $list->setListName($newName);
-            $this->resource->save($list);
+            $this->saveSchedule->execute($params);
 
-            $this->messageManager->addSuccessMessage(__('The list name has been updated.'));
-
+            $this->messageManager->addSuccessMessage(__('The schedule has been created for the list.'));
         } catch (LocalizedException $e) {
             $this->messageManager->addErrorMessage($e->getMessage());
         } catch (Throwable $e) {
-            $this->logger->error(
-                sprintf('Error updating list name: %s', $e->getMessage()),
-                $e->getTrace()
-            );
+            $this->logger->error(sprintf('Error deleting list: %s', $e->getMessage()), $e->getTrace());
             $this->messageManager->addErrorMessage(
-                __('Something went wrong while updating the list name.')
+                __('Something went wrong while adding to the cart.')
             );
         }
 
         return $resultRedirect->setPath(
-            'customer/account/productlistview',
+            'customer/account/automatedorders',
             ['list_id' => $listId]
         );
     }

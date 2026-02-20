@@ -14,27 +14,22 @@ declare(strict_types=1);
 namespace BroSolutions\QuickOrder\Controller\Account;
 
 use BroSolutions\QuickOrder\Service\GetScheduledAutomatedOrdersEnabled;
+use Magento\Customer\Controller\AbstractAccount;
+use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\Action\HttpGetActionInterface;
-use Magento\Framework\Controller\ResultFactory;
-use Magento\Framework\View\Result\PageFactory;
-use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\View\Result\Page;
+use Magento\Framework\View\Result\PageFactory;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
  * @link       https://www.brosolutions.net/
  */
-class AutomatedOrders implements HttpGetActionInterface
+class AutomatedOrders extends AbstractAccount implements HttpGetActionInterface
 {
     /**
      * @var GetScheduledAutomatedOrdersEnabled
      */
     private $getScheduledAutomatedOrdersEnabled;
-
-    /**
-     * @var ResultFactory
-     */
-    private $resultFactory;
 
     /**
      * @var PageFactory
@@ -43,31 +38,31 @@ class AutomatedOrders implements HttpGetActionInterface
 
     /**
      * @param GetScheduledAutomatedOrdersEnabled $getScheduledAutomatedOrdersEnabled
-     * @param ResultFactory $resultFactory
      * @param PageFactory $pageFactory
+     * @param Context $context
      */
     public function __construct(
         GetScheduledAutomatedOrdersEnabled $getScheduledAutomatedOrdersEnabled,
-        ResultFactory $resultFactory,
-        PageFactory $pageFactory
+        PageFactory $pageFactory,
+        Context $context,
     ) {
         $this->getScheduledAutomatedOrdersEnabled = $getScheduledAutomatedOrdersEnabled;
-        $this->resultFactory = $resultFactory;
         $this->pageFactory = $pageFactory;
+        parent::__construct($context);
     }
 
     /**
      * Get automated orders
      *
-     * @return Redirect|Page
+     * @ingeritdoc
      */
-    public function execute():Redirect|Page
+    public function execute(): ?Page
     {
         if (!$this->getScheduledAutomatedOrdersEnabled->execute()) {
-            /** @var Redirect $resultRedirect */
-            $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
-            $resultRedirect->setPath('customer/account');
-            return $resultRedirect;
+            $this->messageManager->addErrorMessage(
+                __('Scheduled automated orders module is not enabled.')
+            );
+            $this->_redirect('*/*/index');
         }
 
         $resultPage = $this->pageFactory->create();

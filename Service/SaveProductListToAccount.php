@@ -19,6 +19,8 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Store\Model\StoreManager;
 use Throwable;
+use BroSolutions\QuickOrder\Model\ResourceModel\ProductList;
+use BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
@@ -90,8 +92,8 @@ class SaveProductListToAccount
         }
         $connection = $this->resource->getConnection();
 
-        $tableList = $this->resource->getTableName('brosolutions_list');
-        $tableProductList = $this->resource->getTableName('brosolutions_product_list');
+        $tableList = $this->resource->getTableName(ProductList::QUICK_ORDER_LIST_TABLE);
+        $tableProductList = $this->resource->getTableName(ProductListItem::QUICK_ORDER_LIST_ITEM_TABLE);
 
         $connection->beginTransaction();
 
@@ -107,36 +109,47 @@ class SaveProductListToAccount
 
             $lastInsertListId = (int)$connection->lastInsertId();
 
-            $parentIdMap = [];
-            $lastInsertId = null;
+            // Separate parent and child items
+            $parentItems = [];
+            $childItemsGroups = [];
+            $currentParentIndex = -1;
 
             foreach ($productsData as $productDataItem) {
-
                 $productDataItem['list_id'] = $lastInsertListId;
-                $parentId = $productDataItem['parent_id'];
 
-                if (empty($parentId)) {
-                    //insert parent
-                    $connection->insert(
-                        $tableProductList,
-                        $productDataItem
-                    );
-
-                    $lastInsertId = (int)$connection->lastInsertId();
+                if (empty($productDataItem['parent_id'])) {
+                    // Parent item
+                    unset($productDataItem['parent_id']);
+                    $parentItems[] = $productDataItem;
+                    $currentParentIndex++;
                 } else {
-                    $parentIdMap[$lastInsertId][] = $productDataItem;
+                    // Child item - group by parent
+                    if (!isset($childItemsGroups[$currentParentIndex])) {
+                        $childItemsGroups[$currentParentIndex] = [];
+                    }
+                    unset($productDataItem['parent_id']);
+                    $childItemsGroups[$currentParentIndex][] = $productDataItem;
                 }
             }
 
-            foreach ($parentIdMap as $parentId => $productList) {
-                foreach ($productList as $productDataItem) {
-                    $productDataItem['parent_id'] = $parentId;
-                    if (!empty($parentId)) {
-                        $connection->insertMultiple(
-                            $tableProductList,
-                            $productDataItem
-                        );
+            // Insert all parent items at once
+            if (!empty($parentItems)) {
+                $connection->insertMultiple($tableProductList, $parentItems);
+                $firstParentId = (int)$connection->lastInsertId();
+
+                // Prepare all child items with correct parent_id
+                $allChildItems = [];
+                foreach ($childItemsGroups as $parentIndex => $childItems) {
+                    $parentId = $firstParentId + $parentIndex;
+                    foreach ($childItems as $childItem) {
+                        $childItem['parent_id'] = $parentId;
+                        $allChildItems[] = $childItem;
                     }
+                }
+
+                // Insert all child items at once
+                if (!empty($allChildItems)) {
+                    $connection->insertMultiple($tableProductList, $allChildItems);
                 }
             }
 

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Block\Customer;
 
-use BroSolutions\QuickOrder\Model\ProductListItem;
+use BroSolutions\QuickOrder\Model\Item\ProductListItem;
 use BroSolutions\QuickOrder\Model\ResourceModel\ProductList\CollectionFactory as ProductListCollectionFactory;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
@@ -26,6 +26,7 @@ use Magento\InventoryApi\Api\Data\SourceItemInterface;
 use Magento\InventoryApi\Api\GetSourceItemsBySkuInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
+use BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem as ProductListItemResource;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
@@ -573,7 +574,7 @@ class Items extends Template
 
             $collection->getSelect()
                 ->joinLeft(
-                    ['items' => $collection->getTable('brosolutions_product_list')],
+                    ['items' => $collection->getTable(ProductListItemResource::QUICK_ORDER_LIST_ITEM_TABLE)],
                     'main_table.id = items.list_id',
                     [
                         'item_id' => 'items.id',

@@ -83,7 +83,6 @@ class AddToCart implements HttpPostActionInterface
         }
 
         try {
-
             $this->cartManagement->addToCart($this->request->getParam('jsonData'));
         } catch (Exception $e) {
             return $resultJson->setData(

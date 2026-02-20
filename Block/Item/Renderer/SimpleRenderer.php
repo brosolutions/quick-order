@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Block\Item\Renderer;
 
-use BroSolutions\QuickOrder\Model\ProductListItem;
+use BroSolutions\QuickOrder\Model\Item\ProductListItem;
 use Magento\Catalog\Model\Product;
 use Magento\Eav\Model\Entity\Attribute\AbstractAttribute;
 use Magento\Framework\Exception\LocalizedException;

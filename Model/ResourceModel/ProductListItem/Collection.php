@@ -11,29 +11,28 @@
  */
 declare(strict_types=1);
 
-namespace BroSolutions\QuickOrder\Model\ResourceModel;
+namespace BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem;
 
-use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
+use BroSolutions\QuickOrder\Model\ProductListItem as Model;
+use BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem as ResourceModel;
+use Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
  * @link       https://www.brosolutions.net/
  */
-class ProductList extends AbstractDb
+class Collection extends AbstractCollection
 {
     /**
      * @var string
      */
-    public const QUICK_ORDER_LIST_TABLE = 'brosolutions_quickorder_list';
+    protected $_idFieldName = 'id';
 
     /**
      * @inheritdoc
      */
     protected function _construct()
     {
-        $this->_init(
-            self::QUICK_ORDER_LIST_TABLE,
-            'id'
-        );
+        $this->_init(Model::class, ResourceModel::class);
     }
 }

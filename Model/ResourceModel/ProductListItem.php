@@ -19,12 +19,12 @@ use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
  * @copyright  Copyright (c) 2025 BroSolutions
  * @link       https://www.brosolutions.net/
  */
-class ProductList extends AbstractDb
+class ProductListItem extends AbstractDb
 {
     /**
      * @var string
      */
-    public const QUICK_ORDER_LIST_TABLE = 'brosolutions_quickorder_list';
+    public const QUICK_ORDER_LIST_ITEM_TABLE = 'brosolutions_quickorder_list_item';
 
     /**
      * @inheritdoc
@@ -32,7 +32,7 @@ class ProductList extends AbstractDb
     protected function _construct()
     {
         $this->_init(
-            self::QUICK_ORDER_LIST_TABLE,
+            self::QUICK_ORDER_LIST_ITEM_TABLE,
             'id'
         );
     }

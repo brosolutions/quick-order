@@ -11,29 +11,23 @@
  */
 declare(strict_types=1);
 
-namespace BroSolutions\QuickOrder\Model\ResourceModel;
+namespace BroSolutions\QuickOrder\Model;
 
-use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
+use Magento\Framework\Model\AbstractModel;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
  * @link       https://www.brosolutions.net/
  */
-class ProductList extends AbstractDb
+class AutomaticSchedule extends AbstractModel
 {
-    /**
-     * @var string
-     */
-    public const QUICK_ORDER_LIST_TABLE = 'brosolutions_quickorder_list';
-
     /**
      * @inheritdoc
      */
     protected function _construct()
     {
         $this->_init(
-            self::QUICK_ORDER_LIST_TABLE,
-            'id'
+            \BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule::class
         );
     }
 }

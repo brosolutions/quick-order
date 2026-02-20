@@ -35,7 +35,6 @@ use Throwable;
  */
 class AddToCart implements HttpPostActionInterface
 {
-
     /**
      * @var Http
      */
@@ -77,6 +76,11 @@ class AddToCart implements HttpPostActionInterface
     private $createDataAddListToCart;
 
     /**
+     * @var FormKeyValidator
+     */
+    private $formKeyValidator;
+
+    /**
      * @param Http $request
      * @param JsonFactory $resultJsonFactory
      * @param FormKeyValidator $formKeyValidator
@@ -97,7 +101,7 @@ class AddToCart implements HttpPostActionInterface
         CollectionFactory $collectionFactory,
         CustomerSession $customerSession,
         ManagerInterface $messageManager,
-        LoggerInterface            $logger,
+        LoggerInterface  $logger,
         CreateDataAddListToCart $createDataAddListToCart
     ) {
         $this->request = $request;
@@ -108,6 +112,7 @@ class AddToCart implements HttpPostActionInterface
         $this->messageManager = $messageManager;
         $this->logger = $logger;
         $this->createDataAddListToCart = $createDataAddListToCart;
+        $this->formKeyValidator = $formKeyValidator;
     }
 
     /**
@@ -124,6 +129,10 @@ class AddToCart implements HttpPostActionInterface
                 return $resultRedirect->setPath('customer/account/login');
             }
 
+            if (!$this->formKeyValidator->validate($this->request)) {
+                throw new LocalizedException(__('Invalid Form Key. Please refresh the page.'));
+            }
+
             if (!$listId) {
                 throw new LocalizedException(__('Invalid list.'));
             }
@@ -134,12 +143,12 @@ class AddToCart implements HttpPostActionInterface
             /** @var ProductList $list */
             $list = $collection->getFirstItem();
 
-            if ((int)$list->getCustomerId() !== (int)$this->customerSession->getCustomerId()) {
-                throw new LocalizedException(__('You are not allowed to delete this list.'));
-            }
-
             if (!$listId = $list->getId()) {
                 throw new LocalizedException(__('The list no longer exists.'));
+            }
+
+            if ((int)$list->getCustomerId() !== (int)$this->customerSession->getCustomerId()) {
+                throw new LocalizedException(__('You are not allowed to add this list.'));
             }
 
             $productsData = $this->createDataAddListToCart->execute((int)$listId);
