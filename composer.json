@@ -6,7 +6,13 @@
         "magento/framework": "*",
         "magento/module-catalog": "*",
         "magento/module-store": "*",
-        "magento/module-eav": "*"
+        "magento/module-eav": "*",
+        "magento/module-quote": "*",
+        "magento/module-checkout": "*",
+        "magento/module-customer": "*",
+        "magento/module-sales": "*",
+        "magento/module-ui": "*",
+        "magento/module-backend": "*"
     },
     "type": "magento2-module",
     "version": "1.0.0",
@@ -20,4 +26,3 @@
         }
     }
 }
-

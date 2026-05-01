@@ -1,0 +1,264 @@
+<?php
+/**
+ * Copyright (c) 2026 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Customer\AutomatedOrders;
+use Magento\Framework\Escaper;
+
+/**
+ * @var AutomatedOrders $block
+ * @var Escaper $escaper
+ **/
+?>
+
+<form class="form form-create-schedule"
+      method="post"
+      action="<?= $escaper->escapeUrl($block->getUrl('quickorder/schedule/saveschedule')) ?>"
+      id="form-validate"
+      enctype="multipart/form-data"
+      autocomplete="off"
+      data-mage-init='{"validation":{}}'>
+
+    <?= /* @noEscape */ $block->getBlockHtml('formkey') ?>
+
+    <fieldset class="fieldset info">
+        <legend class="legend"><span><?= $escaper->escapeHtml(__('Schedule Information')) ?></span></legend><br>
+
+        <div class="field field-reserved shipping_address required">
+            <label class="label" for="shipping-address"><span><?= $escaper->escapeHtml(__('Shipping address')) ?></span></label>
+            <div class="control">
+                <select id="shipping-address" name="shipping_address" title="<?= $escaper->escapeHtmlAttr(__('Shipping address')) ?>" class="select w-full" required>
+                    <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
+                    <?php
+                    $defaultShippingAddressId = $block->getDefaultShippingAddressId();
+                    foreach ($block->getCustomerAddresses() as $address):
+                        $isSelected = ($address->getId() == $defaultShippingAddressId) ? 'selected' : '';
+                        ?>
+                        <option value="<?= $escaper->escapeHtmlAttr((string)$address->getId()) ?>" <?= $escaper->escapeHtmlAttr($isSelected) ?>>
+                            <?= $escaper->escapeHtml($block->getAddressLabel($address)) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved shipping_method required">
+            <label class="label" for="shipping-method"><span><?= $escaper->escapeHtml(__('Shipping methods')) ?></span></label>
+            <div class="control">
+                <select id="shipping-method" name="shipping_method" class="select w-full" required>
+                    <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
+                    <?php foreach ($block->getShippingMethods() as $method): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($method['code']) ?>">
+                            <?= $escaper->escapeHtml($method['title']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved billing_address required">
+            <label class="label" for="billing-address"><span><?= $escaper->escapeHtml(__('Billing address')) ?></span></label>
+            <div class="control">
+                <select id="billing-address" name="billing_address" class="select w-full" required>
+                    <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
+                    <?php
+                    $defaultBillingId = $block->getDefaultBillingAddressId();
+                    foreach ($block->getCustomerAddresses() as $address): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr((string)$address->getId()) ?>" <?= $escaper->escapeHtmlAttr($address->getId() == $defaultBillingId ? 'selected' : '') ?>>
+                            <?= $escaper->escapeHtml($block->getAddressLabel($address)) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved payment_method required">
+            <label class="label" for="payment-method"><span><?= $escaper->escapeHtml(__('Payment methods')) ?></span></label>
+            <div class="control">
+                <select id="payment-method" name="payment_method" class="select w-full" required>
+                    <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
+                    <?php foreach ($block->getPaymentMethods() as $paymentMethod): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($paymentMethod['code']) ?>">
+                            <?= $escaper->escapeHtml($paymentMethod['title']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved list_id required">
+            <label class="label" for="list-id"><span><?= $escaper->escapeHtml(__('Product lists')) ?></span></label>
+            <div class="control">
+                <select id="list-id" name="list_id" class="select w-full" required>
+                    <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
+                    <?php foreach ($block->getProductLists() as $list): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr((string)$list->getId()) ?>">
+                            <?= $escaper->escapeHtml($list->getListName()) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved frequency required">
+            <label class="label" for="frequency"><span><?= $escaper->escapeHtml(__('Frequency')) ?></span></label>
+            <div class="control">
+                <select name="frequency" id="frequency" class="select w-full" required>
+                    <?php foreach ($block->getFrequencyOptions() as $option): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($option['value']) ?>">
+                            <?= $escaper->escapeHtml($option['label']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved frequency_value required" id="frequency_value_wrapper">
+            <label class="label" for="frequency_value"><span><?= $escaper->escapeHtml(__('Months Interval')) ?></span></label>
+            <div class="control">
+                <input type="number" name="frequency_value" id="frequency_value" min="1" value="1" class="input-text required-entry validate-number validate-greater-than-zero">
+            </div>
+        </div>
+
+        <div class="field field-reserved start_at required">
+            <label class="label" for="start-at"><span><?= $escaper->escapeHtml(__('Start Date & Time')) ?></span></label>
+            <div class="control">
+                <input type="datetime-local" id="start-at" name="start_at" required class="input-text required-entry w-full">
+            </div>
+        </div>
+
+        <div class="field field-reserved timezone required">
+            <label class="label" for="timezone"><span><?= $escaper->escapeHtml(__('Timezone')) ?></span></label>
+            <div class="control">
+                <select id="timezone" name="timezone" class="select w-full" required>
+                    <?php foreach ($block->getTimezones() as $tz): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr($tz['value']) ?>" <?= $escaper->escapeHtmlAttr($tz['value'] == $block->getStoreTimezone() ? 'selected' : '') ?>>
+                            <?= $escaper->escapeHtml($tz['label']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+<br />
+        <legend class="legend"><span><?= $escaper->escapeHtml(__('Product Validation Rules')) ?></span></legend><br>
+        <div class="field field-reserved required">
+            <label class="label"><span><?= $escaper->escapeHtml(__('If product is missing or disabled')) ?></span></label>
+            <div class="control">
+                <select name="action_missing" class="select w-full" required>
+                    <option value="error"><?= $escaper->escapeHtml(__('Stop order with error')) ?></option>
+                    <option value="skip"><?= $escaper->escapeHtml(__('Skip product and order the rest')) ?></option>
+                    <option value="pause"><?= $escaper->escapeHtml(__('Pause schedule')) ?></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved required">
+            <label class="label"><span><?= $escaper->escapeHtml(__('If product is out of stock')) ?></span></label>
+            <div class="control">
+                <select name="action_oos" class="select w-full" required>
+                    <option value="error"><?= $escaper->escapeHtml(__('Stop order with error')) ?></option>
+                    <option value="skip"><?= $escaper->escapeHtml(__('Skip product and order the rest')) ?></option>
+                    <option value="pause"><?= $escaper->escapeHtml(__('Pause schedule')) ?></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved required">
+            <label class="label"><span><?= $escaper->escapeHtml(__('If product price changes')) ?></span></label>
+            <div class="control">
+                <select name="action_price" id="action_price" class="select w-full" required>
+                    <option value="allow"><?= $escaper->escapeHtml(__('Allow order at current prices')) ?></option>
+                    <option value="block"><?= $escaper->escapeHtml(__('Block order if price increases more than X%')) ?></option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field field-reserved" id="price_threshold_wrapper" style="display: none;">
+            <label class="label" for="price_threshold"><span><?= $escaper->escapeHtml(__('Max Price Increase (%)')) ?></span></label>
+            <div class="control">
+                <input type="number" step="0.01" min="0.01" name="price_threshold" id="price_threshold" class="input-text w-full">
+            </div>
+        </div>
+        <div class="field field-reserved next-run-preview mt-4">
+            <label class="label"><span><?= $escaper->escapeHtml(__('Next run preview')) ?></span></label>
+            <div class="control preview-control">
+                <strong id="next-run-preview" class="preview-text" style="color: #006bb4;">—</strong>
+            </div>
+        </div>
+    </fieldset>
+
+    <div class="actions-toolbar">
+        <div class="primary">
+            <button type="submit" class="action save primary btn btn-primary" title="<?= $escaper->escapeHtmlAttr(__('Save Schedule')) ?>">
+                <span><?= $escaper->escapeHtml(__('Save Schedule')) ?></span>
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+    const freq = document.getElementById('frequency');
+    const wrapper = document.getElementById('frequency_value_wrapper');
+    const startInput = document.getElementById('start-at');
+    const preview = document.getElementById('next-run-preview');
+    const intervalInput = document.getElementById('frequency_value');
+
+    const actionPrice = document.getElementById('action_price');
+    const priceThresholdWrapper = document.getElementById('price_threshold_wrapper');
+    const priceThresholdInput = document.getElementById('price_threshold');
+
+    function calculatePreview() {
+        if (!startInput.value) return;
+
+        let date = new Date(startInput.value);
+        let frequency = freq.value;
+
+        if (frequency === 'monthly') {
+            date.setMonth(date.getMonth() + 1);
+        } else if (frequency === 'monthly_n') {
+            let n = parseInt(intervalInput.value) || 1;
+            date.setMonth(date.getMonth() + n);
+        } else if (frequency === 'weekly') {
+            date.setDate(date.getDate() + 7);
+        }
+
+        preview.innerText = date.toLocaleString();
+    }
+
+    freq.addEventListener('change', () => {
+        wrapper.style.display = freq.value === 'monthly_n' ? 'block' : 'none';
+        if (freq.value !== 'monthly_n') {
+            intervalInput.classList.remove('required-entry');
+        } else {
+            intervalInput.classList.add('required-entry');
+        }
+        calculatePreview();
+    });
+
+    if (actionPrice) {
+        actionPrice.addEventListener('change', function(e) {
+            if (e.target.value === 'block') {
+                priceThresholdWrapper.style.display = 'block';
+                priceThresholdInput.classList.add('required-entry');
+            } else {
+                priceThresholdWrapper.style.display = 'none';
+                priceThresholdInput.classList.remove('required-entry');
+            }
+        });
+    }
+
+    startInput.addEventListener('change', calculatePreview);
+    intervalInput.addEventListener('input', calculatePreview);
+
+    calculatePreview();
+</script>

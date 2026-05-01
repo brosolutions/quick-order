@@ -10,8 +10,36 @@
   * contact@brosolutions.net
   -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-<!--	<preference for="BroSolutions\QuickOrder\Api\Data\SearchProductsResultsInterface" type="Magento\Framework\Api\SearchResults"/>-->
-	<preference for="BroSolutions\QuickOrder\Api\SearchProductsManagementInterface" type="BroSolutions\QuickOrder\Model\SearchProductsManagement"/>
+    <preference for="BroSolutions\QuickOrder\Api\SearchProductsManagementInterface" type="BroSolutions\QuickOrder\Model\SearchProductsManagement"/>
     <preference for="BroSolutions\QuickOrder\Api\ProductManagementInterface" type="BroSolutions\QuickOrder\Model\ProductManagement"/>
     <preference for="BroSolutions\QuickOrder\Api\CartManagementInterface" type="BroSolutions\QuickOrder\Model\CartManagement"/>
+
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="quickorder_schedule_listing_data_source" xsi:type="string">BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule\Grid\Collection">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">brosolutions_quickorder_schedule</argument>
+            <argument name="resourceModel" xsi:type="string">BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule</argument>
+            <argument name="identifierName" xsi:type="string">schedule_id</argument>
+            <argument name="eventPrefix" xsi:type="string">quickorder_schedule_grid_collection</argument>
+            <argument name="eventObject" xsi:type="string">schedule_grid_collection</argument>
+        </arguments>
+    </type>
+
+    <type name="BroSolutions\QuickOrder\Service\Quote\ProductAdder">
+        <arguments>
+            <argument name="strategies" xsi:type="array">
+                <item name="simple" xsi:type="object">BroSolutions\QuickOrder\Service\Quote\Product\Type\SimpleStrategy</item>
+                <item name="configurable" xsi:type="object">BroSolutions\QuickOrder\Service\Quote\Product\Type\ConfigurableStrategy</item>
+                <item name="bundle" xsi:type="object">BroSolutions\QuickOrder\Service\Quote\Product\Type\BundleStrategy</item>
+                <item name="grouped" xsi:type="object">BroSolutions\QuickOrder\Service\Quote\Product\Type\GroupedStrategy</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

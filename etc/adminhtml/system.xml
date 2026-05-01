@@ -1,14 +1,4 @@
 <?xml version="1.0"?>
-<!--
-  * Copyright (c) 2025 BroSolutions
-  * All rights reserved
-  *
-  * This product includes proprietary software developed at BroSolutions, Ukraine
-  * For more information see https://www.brosolutions.net/
-  *
-  * To obtain a valid license for using this software please contact us at
-  * contact@brosolutions.net
-  -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
@@ -44,6 +34,11 @@
                     <label>Enable</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="check_previous_order" translate="label comment" type="select" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Check Previous Order Status</label>
+                    <comment>Do not create a new order if the previous order from this schedule is not paid or completed.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
                 <field id="offline_payment_methods" translate="label" type="multiselect" sortOrder="20"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label><![CDATA[Offline Payment Methods]]></label>
@@ -55,7 +50,6 @@
                     <source_model>BroSolutions\QuickOrder\Model\Config\Source\OfflineShippingMethods</source_model>
                 </field>
             </group>
-
         </section>
     </system>
 </config>

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="customer_account"/>
+    <head>
+        <css src="BroSolutions_QuickOrder::css/styles.css"/>
+    </head>
+    <body>
+        <referenceBlock name="page.main.title">
+            <action method="setPageTitle">
+                <argument translate="true" name="title" xsi:type="string">Create Automatic Order</argument>
+            </action>
+        </referenceBlock>
+        <referenceBlock name="customer_account_navigation">
+            <action method="setActive">
+                <argument name="path" xsi:type="string">customer/account/automatedorders</argument>
+            </action>
+        </referenceBlock>
+        <referenceContainer name="content">
+            <block class="BroSolutions\QuickOrder\Block\Customer\AutomatedOrders"
+                   name="brosolutions_create_schedule_form"
+                   template="BroSolutions_QuickOrder::customer/create_schedule.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

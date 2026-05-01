@@ -13,6 +13,7 @@
 declare(strict_types=1);
 
 use BroSolutions\QuickOrder\Block\Customer\AutomatedOrders;
+use BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule;
 use Magento\Framework\Escaper;
 
 /**
@@ -20,217 +21,90 @@ use Magento\Framework\Escaper;
  * @var Escaper $escaper
  **/
 
-$orders = $block->getOrders(); ?>
+$orders = $block->getOrders();
+?>
+
 <div class="block">
-    <div class="block-title">
-        <strong><?= $escaper->escapeHtml(__('My Automated Orders')); ?></strong>
-    </div>
     <div class="block-content">
         <?php if ($orders->getSize()): ?>
-            <table class="data table">
-                <thead>
-                <tr>
-                    <th><?= $escaper->escapeHtml(__('ID')); ?></th>
-                    <th><?= $escaper->escapeHtml(__('List Name')); ?></th>
-                    <th><?= $escaper->escapeHtml(__('Items')); ?></th>
-                    <th><?= $escaper->escapeHtml(__('Store ID')); ?></th>
-                    <th><?= $escaper->escapeHtml(__('Created At')); ?></th>
-                </tr>
-                </thead>
-                <tbody>
-<!--                --><?php //foreach ($orders as $order):?>
-<!--                    <tr>-->
-<!--                        <td>--><?php //= $escaper->escapeHtml($order->getId());?><!--</td>-->
-<!--                        <td>--><?php //= $escaper->escapeHtml($order->getListName());?><!--</td>-->
-<!--                        <td>-->
-<!--                            --><?php //$items = json_decode($order->getItems(), true);?>
-<!--                            --><?php //if ($items):?>
-<!--                                --><?php //foreach ($items as $item):?>
-<!--                                    <p>--><?php //= $escaper->escapeHtml($item['sku'])?><!--  --><?php //= $escaper->escapeHtml(__(' x '))?><!-- --><?php //= $escaper->escapeHtml($item['qty'])?><!-- </p>-->
-<!--                                --><?php //endforeach;?>
-<!--                            --><?php //endif;?>
-<!--                        </td>-->
-<!--                        <td>--><?php //= $escaper->escapeHtml($order->getStoreId());?><!--</td>-->
-<!--                        <td>--><?php //= $escaper->escapeHtml($order->getCreatedAt());?><!--</td>-->
-<!--                    </tr>-->
-<!--                --><?php //endforeach;?>
-                </tbody>
-            </table>
+            <div class="overflow-x-auto card mb-4">
+                <table class="data table w-full sm:table-fixed lg:table-auto">
+                    <thead class="table-header-top text-sm whitespace-nowrap">
+                    <tr>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('List Name')); ?></th>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('Frequency')); ?></th>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('Start at')); ?></th>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('Timezone')); ?></th>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('Next run at')); ?></th>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('Last run at')); ?></th>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('Status')); ?></th>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('Created At')); ?></th>
+                        <th class="p-2 text-start"><?= $escaper->escapeHtml(__('Action')); ?></th>
+                    </tr>
+                    </thead>
+                    <tbody class="text-sm whitespace-nowrap">
+                    <?php foreach ($orders as $order): ?>
+                        <tr class="border-b last:border-0 align-top">
+                            <td class="p-2">
+                                <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/productlistview/list_id/' . $order->getListId())); ?>" class="hover:underline text-primary font-medium">
+                                    <?= $escaper->escapeHtml($order->getListName()); ?>
+                                </a>
+                            </td>
+                            <td class="p-2">
+                                <?php
+                                $freqCode = (string)$order->getFrequency();
+                                if ($freqCode === 'monthly_n') {
+                                    echo $escaper->escapeHtml((string)__('Every %1 months', $order->getFrequencyValue()));
+                                } else {
+                                    echo $escaper->escapeHtml($block->getFrequencyLabel($freqCode));
+                                }
+                                ?>
+                            </td>
+                            <td class="p-2"><?= $escaper->escapeHtml($block->formatScheduleDate((string)$order->getStartAt(), (string)$order->getTimezone())); ?></td>
+                            <td class="p-2"><?= $escaper->escapeHtml((string)$order->getTimezone()); ?></td>
+                            <td class="p-2"><?= $escaper->escapeHtml($block->formatScheduleDate((string)$order->getNextRunAt(), (string)$order->getTimezone())); ?></td>
+
+                            <td class="p-2"><?= $order->getLastRunAt() ? $escaper->escapeHtml($block->formatScheduleDate((string)$order->getLastRunAt(), (string)$order->getTimezone())) : $escaper->escapeHtml(__('Never')); ?></td>
+
+                            <td class="p-2">
+                                <?php
+                                $statusClass = 'text-gray-600';
+                                if ($order->getStatus() === AutomaticSchedule::STATUS_ACTIVE) {
+                                    $statusClass = 'text-green-600 font-medium';
+                                } elseif ($order->getStatus() === AutomaticSchedule::STATUS_PAUSED) {
+                                    $statusClass = 'text-orange-500 font-medium';
+                                } elseif ($order->getStatus() === AutomaticSchedule::STATUS_ERROR) {
+                                    $statusClass = 'text-red-600 font-medium';
+                                }
+                                ?>
+
+                                <span class="<?= $escaper->escapeHtmlAttr($statusClass) ?>">
+                                    <?= $escaper->escapeHtml(ucfirst((string)$order->getStatus())); ?>
+                                </span>
+                            </td>
+                            <td class="p-2"><?= $escaper->escapeHtml($block->formatScheduleDate((string)$order->getCreatedAt(), (string)$order->getTimezone())); ?></td>
+                            <td class="p-2">
+                                <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/scheduleview/schedule_id/' . $order->getScheduleId())); ?>" class="action view text-sm font-medium hover:underline text-primary">
+                                    <span><?= $escaper->escapeHtml(__('View')); ?></span>
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php else: ?>
-            <p><?= $escaper->escapeHtml(__('No automated orders found.')) ?></p>
+            <div class="message info empty mb-6">
+                <span><?= $escaper->escapeHtml(__('No automated orders found.')) ?></span>
+            </div>
         <?php endif; ?>
     </div>
-</div>
-<div class="block w-full md:w-1/2">
-    <div class="block-title mb-4 pt-5">
-        <strong class="font-semibold text-lg"><?= $escaper->escapeHtml(__('Create Automatic Order')) ?></strong>
-    </div>
-    <form method="post" action="<?= $escaper->escapeUrl($block->getUrl('quickorder/schedule/saveschedule')) ?>"  data-mage-init='{"validation":{}}'>
-        <?= $block->getBlockHtml('formkey') ?>
-        <div class="block-content">
-            <div class="box">
-                <fieldset class="fieldset info">
-                    <div class="field field-reserved w-full required">
-                        <label class="label" for="shipping-address">
-                            <?= $escaper->escapeHtml(__('Shipping address')) ?>
-                        </label>
 
-                        <select id="shipping-address" name="shipping_address" class="w-full" required>
-                            <option value="">
-                                <?= $escaper->escapeHtml(__('Please select')) ?>
-                            </option>
-
-                            <?php
-                            $defaultShippingAddressId = $block->getDefaultShippingAddressId();
-                            foreach ($block->getCustomerAddresses() as $address):
-                                $isSelected = ($address->getId() == $defaultShippingAddressId) ? 'selected' : '';
-                                ?>
-                                <option value="<?= $escaper->escapeHtmlAttr($address->getId()) ?>" <?= $escaper->escapeHtmlAttr($isSelected) ?>>
-                                    <?= $escaper->escapeHtml($block->getAddressLabel($address)) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="field field-reserved w-full required">
-                        <label class="label" for="shipping-method">
-                            <?= $escaper->escapeHtml(__('Shipping methods')) ?>
-                        </label>
-
-                        <select id="shipping-method" name="shipping_method" class="w-full" required>
-                            <option value="">
-                                <?= $escaper->escapeHtml(__('Please select')) ?>
-                            </option>
-
-                            <?php foreach ($block->getShippingMethods() as $method): ?>
-                                <option value="<?= $escaper->escapeHtmlAttr($method['code']) ?>">
-                                    <?= $escaper->escapeHtml($method['title']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="field field-reserved w-full required">
-                        <label class="label" for="billing-address">
-                            <?= $escaper->escapeHtml(__('Billing address')) ?>
-                        </label>
-                        <select id="billing-address" name="billing_address" class="w-full" required>
-                            <option value="">
-                                <?= $escaper->escapeHtml(__('Please select')) ?>
-                            </option>
-                            <?php
-                            $defaultBillingId = $block->getDefaultBillingAddressId();
-                                foreach ($block->getCustomerAddresses() as $address): ?>
-                                <option value="<?= $escaper->escapeHtmlAttr($address->getId()) ?>"
-                                    <?= $address->getId() == $defaultBillingId ? 'selected' : '' ?>>
-                                    <?= $escaper->escapeHtml($block->getAddressLabel($address)) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="field field-reserved w-full required">
-                        <label class="label" for="payment-method">
-                            <?= $escaper->escapeHtml(__('Payment methods')) ?>
-                        </label>
-                        <select id="payment-method" name="payment_method" class="w-full" required>
-                            <option value="">
-                                <?= $escaper->escapeHtml(__('Please select')) ?>
-                            </option>
-
-                            <?php foreach ($block->getPaymentMethods() as $paymentMethod): ?>
-                                <option value="<?= $escaper->escapeHtmlAttr($paymentMethod['code']) ?>">
-                                    <?= $escaper->escapeHtml($paymentMethod['title']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="field field-reserved w-full required">
-                        <label class="label" for="list-id">
-                            <?= $escaper->escapeHtml(__('Product lists')) ?>
-                        </label>
-                        <select id="list-id" name="list_id" class="w-full" required>
-                            <option value="">
-                                <?= $escaper->escapeHtml(__('Please select')) ?>
-                            </option>
-
-                            <?php foreach ($block->getOrders() as $order): ?>
-                                <option value="<?= (int)$order->getId() ?>">
-                                    <?= $escaper->escapeHtml($order->getListName()) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="field field-reserved w-full required">
-                        <label class="label" for="frequency"><?= $escaper->escapeHtml(__('Frequency')) ?></label>
-                        <select name="frequency" class="w-full" id="frequency">
-                            <option value="monthly"><?= $escaper->escapeHtml(__('Once per month')) ?></option>
-                            <option value="monthly_n"><?= $escaper->escapeHtml(__('Every N months')) ?></option>
-                            <option value="weekly"><?= $escaper->escapeHtml(__('Once per week')) ?></option>
-                        </select>
-                    </div>
-
-                    <div class="field field-reserved w-full required" id="frequency_value_wrapper" style="display:none;">
-                        <label class="label"
-                               for="frequency_value"><?= $escaper->escapeHtml(__('Months Interval')) ?></label>
-                        <input type="number" name="frequency_value" min="1" value="1" class="required-entry validate-number w-full validate-greater-than-zero">
-                    </div>
-
-                    <div class="field field-reserved w-full required">
-                        <label class="label" for="start_at"><?= $escaper->escapeHtml(__('Start Date & Time')) ?></label>
-                        <input type="datetime-local" id="start-at" name="start_at" required class="required-entry w-full">
-                    </div>
-
-                    <div class="field field-reserved w-full required">
-                        <label class="label" for="timezone"><?= $escaper->escapeHtml(__('Timezone')) ?></label>
-                        <select id="timezone" class="w-full" name="timezone">
-                            <?php foreach ($block->getTimezones() as $tz): ?>
-                                <option value="<?= $escaper->escapeHtmlAttr($tz['value']) ?>"
-                                    <?= $tz['value'] == $block->getStoreTimezone() ? 'selected' : '' ?>>
-                                    <?= $escaper->escapeHtml($tz['label']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="field field-reserved w-full">
-                        <h3><?= $escaper->escapeHtml(__('Next run preview')) ?>:</h3>
-                        <div id="next-run-preview">—</div>
-                    </div>
-                    <button class="btn btn-primary text-sm" type="submit"><?= $escaper->escapeHtml(__('Save Schedule')) ?></button>
-                </fieldset>
-            </div>
+    <div class="actions-toolbar mt-6 flex justify-start text-left automated-orders-actions">
+        <div class="primary">
+            <a href="<?= $escaper->escapeUrl($block->getUrl('customer/account/createschedule')) ?>" class="action primary btn btn-primary">
+                <span><?= $escaper->escapeHtml(__('Create Automated Order')) ?></span>
+            </a>
         </div>
-    </form>
+    </div>
 </div>
-
-<script>
-    const freq = document.getElementById('frequency');
-    const wrapper = document.getElementById('frequency_value_wrapper');
-    const startInput = document.querySelector('[name="start_at"]');
-    const preview = document.getElementById('next-run-preview');
-
-    freq.addEventListener('change', () => {
-        wrapper.style.display = freq.value === 'monthly_n' ? 'block' : 'none';
-        calculatePreview();
-    });
-
-    startInput.addEventListener('change', calculatePreview);
-
-    function calculatePreview() {
-        if (!startInput.value) return;
-
-        let date = new Date(startInput.value);
-        let frequency = freq.value;
-
-        if (frequency === 'monthly') {
-            date.setMonth(date.getMonth() + 1);
-        } else if (frequency === 'monthly_n') {
-            let n = document.querySelector('[name="frequency_value"]').value || 1;
-            date.setMonth(date.getMonth() + parseInt(n));
-        } else if (frequency === 'weekly') {
-            date.setDate(date.getDate() + 7);
-        }
-
-        preview.innerText = date.toLocaleString();
-    }
-</script>

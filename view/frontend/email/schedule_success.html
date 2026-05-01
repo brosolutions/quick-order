@@ -1,0 +1,13 @@
+<!--@subject {{trans "Order has been successfully created"}} @-->
+<!--@vars {
+"var customerName":"Customer Name",
+"var scheduleName":"Schedule Name",
+"var orderId":"Order id"
+} @-->
+{{template config_path="design/email/header_template"}}
+<p>{{trans "Dear %customer_name," customer_name=$customerName}}</p>
+<p>{{trans "Great news! Your automated order for the schedule &quot;%schedule_name&quot; has been successfully created." schedule_name=$scheduleName}}</p>
+<p>{{trans "Your Order ID is: <strong>%order_id</strong>." order_id=$orderId |raw}}</p>
+<p>{{trans "You can view the full details of this order in your account dashboard."}}</p>
+<p>{{trans "Thank you for shopping with us!"}}</p>
+{{template config_path="design/email/footer_template"}}

@@ -15,6 +15,7 @@ namespace BroSolutions\QuickOrder\Block\Customer;
 
 use BroSolutions\QuickOrder\Model\Item\ProductListItem;
 use BroSolutions\QuickOrder\Model\ResourceModel\ProductList\CollectionFactory as ProductListCollectionFactory;
+use BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem as ProductListItemResource;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
@@ -26,7 +27,6 @@ use Magento\InventoryApi\Api\Data\SourceItemInterface;
 use Magento\InventoryApi\Api\GetSourceItemsBySkuInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem as ProductListItemResource;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
@@ -310,10 +310,10 @@ class Items extends Template
     /**
      * Check if product is in stock by checking source items
      *
-     * @param Product $product
+     * @param Product|null $product
      * @return bool
      */
-    private function checkProductInStock(Product $product): bool
+    private function checkProductInStock(?Product $product): bool
     {
         if (!$product) {
             return false;
@@ -721,20 +721,6 @@ class Items extends Template
     }
 
     /**
-     * Get list id
-     *
-     * @return int
-     */
-    private function getListId(): int
-    {
-        if ($this->listId === null) {
-            $this->listId = (int)$this->getRequest()->getParam('list_id');
-        }
-
-        return $this->listId;
-    }
-
-    /**
      * Get list name url
      *
      * @return string
@@ -756,5 +742,19 @@ class Items extends Template
         return $this->getUrl('quickorder/list/addtocart', [
             'list_id' => $this->getListId()
         ]);
+    }
+
+    /**
+     * Get list id
+     *
+     * @return int
+     */
+    private function getListId(): int
+    {
+        if ($this->listId === null) {
+            $this->listId = (int)$this->getRequest()->getParam('list_id');
+        }
+
+        return $this->listId;
     }
 }

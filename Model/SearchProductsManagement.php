@@ -107,8 +107,7 @@ class SearchProductsManagement implements SearchProductsManagementInterface
         GetStoreId               $getStoreId,
         ImageFactory             $imageFactory,
         Emulation                $emulation
-    )
-    {
+    ) {
         $this->priceCurrency = $priceCurrency;
         $this->storeManager = $storeManager;
         $this->getQuickOrderEnable = $getQuickOrderEnable;

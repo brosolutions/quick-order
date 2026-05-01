@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!--
+  * Copyright (c) 2026 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="brosolutions_quickorder_schedule_success">
+        <observer name="brosolutions_quickorder_schedule_success_observer" instance="BroSolutions\QuickOrder\Observer\ScheduleSuccessObserver" />
+    </event>
+    <event name="brosolutions_quickorder_schedule_error">
+        <observer name="brosolutions_quickorder_schedule_error_observer" instance="BroSolutions\QuickOrder\Observer\ScheduleErrorObserver" />
+    </event>
+</config>

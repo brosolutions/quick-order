@@ -1,0 +1,13 @@
+<!--@subject {{trans "The order was not created due to an error"}} @-->
+<!--@vars {
+"var customerName":"Customer Name",
+"var scheduleName":"Schedule Name",
+"var errorMessage":"Error Message"
+} @-->
+{{template config_path="design/email/header_template"}}
+<p>{{trans "Dear %customer_name," customer_name=$customerName}}</p>
+<p>{{trans "We encountered an issue while trying to process your automated order for the schedule &quot;%schedule_name&quot;." schedule_name=$scheduleName}}</p>
+<p><strong>{{trans "Error Details:"}}</strong><br>
+    <span style="color: #e02b27;">{{var errorMessage}}</span></p>
+<p>{{trans "To prevent any unwanted charges, we have temporarily stopped this schedule. Please log in to your account to review your schedule settings and reactivate it when ready."}}</p>
+{{template config_path="design/email/footer_template"}}

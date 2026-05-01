@@ -223,8 +223,6 @@
     animation: spin 1s linear infinite;
 }
 
-
-
 .list-actions-block {
     display: flex;
     gap: 12px;
@@ -253,7 +251,9 @@
 .customer-account-productlistview .error-message{
     color: red;
 }
-
+.customer-account-automatedorders .table-header-top tr th {
+    vertical-align: top;
+}
 
 @keyframes spin {
     0% {
@@ -262,4 +262,74 @@
     100% {
         transform: rotate(360deg);
     }
+}
+
+
+/* --- Schedule & Automated Orders --- */
+
+/* Automated Orders List */
+.customer-account-automatedorders .automated-orders-actions {
+    margin-top: 20px;
+}
+
+/* Create Schedule Form */
+.customer-account-createschedule .form-create-schedule {
+    max-width: 600px;
+    margin-top: 20px;
+}
+
+.customer-account-createschedule  #frequency_value_wrapper {
+    display: none;
+}
+
+.customer-account-createschedule  .preview-control {
+    padding-top: 8px;
+}
+
+.customer-account-createschedule .preview-text {
+    color: #006bb4;
+}
+
+/* Schedule Actions */
+.customer-account-scheduleview .actions-toolbar {
+    display: flex;
+    margin-bottom: 1.5rem;
+}
+.customer-account-scheduleview .actions-toolbar .primary {
+    display: flex;
+    margin-right: 1.5rem;
+}
+.customer-account-scheduleview .actions-toolbar form {
+    margin: 0;
+}
+
+.customer-account-scheduleview .actions-toolbar .btn-delete {
+    color: #e02b27;
+    border-color: #e02b27;
+    background: transparent;
+}
+
+/* Schedule View */
+.customer-account-scheduleview .schedule-box-content {
+    line-height: 1.6;
+}
+.customer-account-scheduleview .address-format {
+    font-style: normal;
+    margin: 0;
+}
+.customer-account-scheduleview .status-default {
+    font-weight: 600;
+    color: #333;
+}
+.customer-account-scheduleview .status-active {
+    font-weight: 600;
+    color: green;
+}
+.customer-account-scheduleview .status-paused {
+    font-weight: 600;
+    color: #e26703;
+}
+.customer-account-scheduleview .status-error {
+    font-weight: 600;
+    color: red;
 }

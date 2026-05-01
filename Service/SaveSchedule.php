@@ -15,11 +15,20 @@ namespace BroSolutions\QuickOrder\Service;
 
 use BroSolutions\QuickOrder\Model\AutomaticScheduleFactory;
 use BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule;
-use Magento\Framework\Exception\AlreadyExistsException;
+use DateTime;
+use DateTimeZone;
+use Exception;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Customer\Api\AddressRepositoryInterface;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Stdlib\DateTime\DateTime;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Serialize\Serializer\Json;
+use Psr\Log\LoggerInterface;
 
 /**
+ * Service to process and save schedule with address snapshots and rules.
+ *
  * @copyright  Copyright (c) 2026 BroSolutions
  * @link       https://www.brosolutions.net/
  */
@@ -35,7 +44,8 @@ class SaveSchedule
         'shipping_address',
         'shipping_method',
         'frequency',
-        'start_at'
+        'start_at',
+        'timezone'
     ];
 
     /**
@@ -49,23 +59,65 @@ class SaveSchedule
     private $resource;
 
     /**
-     * @var DateTime
+     * @var AddressRepositoryInterface
      */
-    private $dateTime;
+    private $addressRepository;
 
     /**
+     * @var Json
+     */
+    private $json;
+
+    /**
+     * @var CalculateNextRun
+     */
+    private $calculateNextRun;
+
+    /**
+     * @var ProductRepositoryInterface
+     */
+    private $productRepository;
+
+    /**
+     * @var CreateDataAddListToCart
+     */
+    private $createDataAddListToCart;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * Constructor
+     *
      * @param AutomaticScheduleFactory $scheduleFactory
      * @param AutomaticSchedule $resource
-     * @param DateTime $dateTime
+     * @param AddressRepositoryInterface $addressRepository
+     * @param Json $json
+     * @param CalculateNextRun $calculateNextRun
+     * @param ProductRepositoryInterface $productRepository
+     * @param CreateDataAddListToCart $createDataAddListToCart
+     * @param LoggerInterface $logger
      */
     public function __construct(
         AutomaticScheduleFactory $scheduleFactory,
         AutomaticSchedule $resource,
-        DateTime $dateTime
+        AddressRepositoryInterface $addressRepository,
+        Json $json,
+        CalculateNextRun $calculateNextRun,
+        ProductRepositoryInterface $productRepository,
+        CreateDataAddListToCart $createDataAddListToCart,
+        LoggerInterface $logger
     ) {
         $this->scheduleFactory = $scheduleFactory;
         $this->resource = $resource;
-        $this->dateTime = $dateTime;
+        $this->addressRepository = $addressRepository;
+        $this->json = $json;
+        $this->calculateNextRun = $calculateNextRun;
+        $this->productRepository = $productRepository;
+        $this->createDataAddListToCart = $createDataAddListToCart;
+        $this->logger = $logger;
     }
 
     /**
@@ -73,73 +125,155 @@ class SaveSchedule
      *
      * @param array $data
      * @return void
-     * @throws AlreadyExistsException
      * @throws LocalizedException
+     * @throws Exception
      */
-    public function execute(array $data) :void
+    public function execute(array $data): void
     {
-
         foreach (self::REQUIRED_FIELDS as $field) {
-            if (!isset($data[$field])) {
+            if (empty($data[$field])) {
                 throw new LocalizedException(
                     __('Missing required field: %1', $field)
                 );
             }
         }
 
-        $startTimestamp = strtotime($data['start_at']);
+        $shippingSnapshot = $this->createAddressSnapshot((int)$data['shipping_address']);
+        $billingSnapshot  = $this->createAddressSnapshot((int)$data['billing_address']);
 
-        if (!$startTimestamp) {
-            throw new LocalizedException(__('Invalid start_at date'));
-        }
+        $timezone = $data['timezone'];
+        $localStartDate = new DateTime($data['start_at'], new DateTimeZone($timezone));
 
-        switch ($data['frequency']) {
+        $utcStartDate = clone $localStartDate;
+        $utcStartDate->setTimezone(new DateTimeZone('UTC'));
+        $utcStartString = $utcStartDate->format('Y-m-d H:i:s');
 
-            case 'weekly':
-                $nextTimestamp = strtotime('+1 week', $startTimestamp);
-                break;
-
-            case 'monthly':
-                $nextTimestamp = strtotime('+1 month', $startTimestamp);
-                break;
-
-            case 'monthly_n':
-                if (empty($data['frequency_value']) || (int)$data['frequency_value'] < 1) {
-                    throw new LocalizedException(
-                        __('Frequency value must be greater than 0 for monthly_n')
-                    );
-                }
-
-                $months = (int)$data['frequency_value'];
-                $nextTimestamp = strtotime('+' . $months . ' month', $startTimestamp);
-                break;
-
-            default:
-                throw new LocalizedException(__('Invalid frequency type'));
-        }
-
-        $nextRunAt = $this->dateTime->gmtDate(
-            'Y-m-d H:i:s',
-            $nextTimestamp
+        $nextRunUtc = $this->calculateNextRun->execute(
+            $utcStartString,
+            $timezone,
+            $data['frequency'],
+            isset($data['frequency_value']) && $data['frequency_value'] !== '' ?
+                (int)$data['frequency_value'] : null
         );
+
+        $originalPrices = [];
+        $productsJson = $this->createDataAddListToCart->execute((int)$data['list_id']);
+        if ($productsJson) {
+            $productsData = json_decode($productsJson, true);
+            foreach ($productsData as $item) {
+                if (!empty($item['sku'])) {
+                    try {
+                        $product = $this->productRepository->get($item['sku']);
+                        $originalPrices[$item['sku']] = $this->calculateConfiguredPrice($product, $item);
+                    } catch (NoSuchEntityException $e) {
+                        $this->logger->warning(
+                            sprintf('Product SKU %s not found during schedule creation.', $item['sku'])
+                        );
+                    }
+                }
+            }
+        }
 
         $model = $this->scheduleFactory->create();
 
         $model->setData([
             'list_id'          => (int)$data['list_id'],
-            'shipping_address' => $data['shipping_address'],
-            'billing_address'  => $data['billing_address'],
+            'shipping_address' => $shippingSnapshot,
+            'billing_address'  => $billingSnapshot,
             'shipping_method'  => $data['shipping_method'],
             'payment_method'   => $data['payment_method'],
             'frequency'        => $data['frequency'],
             'frequency_value'  => $data['frequency_value'] ?? null,
-            'start_at'         => $this->dateTime->gmtDate('Y-m-d H:i:s', $startTimestamp),
-            'timezone'         => $data['timezone'],
-            'next_run_at'      => $nextRunAt,
+            'start_at'         => $utcStartString,
+            'timezone'         => $timezone,
+            'next_run_at'      => $nextRunUtc,
             'last_run_at'      => null,
-            'status'           => AutomaticSchedule::STATUS_ACTIVE
+            'status'           => AutomaticSchedule::STATUS_ACTIVE,
+            'action_missing'   => $data['action_missing'] ?? AutomaticSchedule::ACTION_ERROR,
+            'action_oos'       => $data['action_oos'] ?? AutomaticSchedule::ACTION_ERROR,
+            'action_price'     => $data['action_price'] ?? AutomaticSchedule::ACTION_ALLOW,
+            'price_threshold'  => !empty($data['price_threshold']) ? (float)$data['price_threshold'] : null,
+            'original_prices'  => $this->json->serialize($originalPrices)
         ]);
 
         $this->resource->save($model);
+    }
+
+    /**
+     * Creates a JSON snapshot of the customer address.
+     *
+     * @param int $addressId
+     * @return string
+     * @throws LocalizedException
+     */
+    private function createAddressSnapshot(int $addressId): string
+    {
+        $address = $this->addressRepository->getById($addressId);
+
+        $snapshot = [
+            'firstname'  => $address->getFirstname(),
+            'lastname'   => $address->getLastname(),
+            'company'    => $address->getCompany(),
+            'street'     => $address->getStreet(),
+            'city'       => $address->getCity(),
+            'region'     => $address->getRegion() ? $address->getRegion()->getRegion() : '',
+            'region_id'  => $address->getRegionId(),
+            'postcode'   => $address->getPostcode(),
+            'country_id' => $address->getCountryId(),
+            'telephone'  => $address->getTelephone(),
+        ];
+
+        return $this->json->serialize($snapshot);
+    }
+
+    /**
+     * Calculates the exact price based on product type and selected options
+     *
+     * @param ProductInterface $product
+     * @param array $itemData
+     * @return float
+     */
+    private function calculateConfiguredPrice(ProductInterface $product, array $itemData): float
+    {
+        /** @var \Magento\Catalog\Model\Product $product */
+        $price = 0.0;
+        $typeId = $itemData['type_id'] ?? 'simple';
+
+        if ($typeId === 'configurable' && !empty($itemData['active_product']['entity_id'])) {
+            try {
+                $childProduct = $this->productRepository->getById($itemData['active_product']['entity_id']);
+                $price = (float)$childProduct->getFinalPrice();
+            } catch (Exception $e) {
+                $price = (float)$product->getFinalPrice();
+            }
+        } elseif ($typeId === 'bundle' && !empty($itemData['active_selections'])) {
+            $typeInstance = $product->getTypeInstance();
+            $selections = $typeInstance->getSelectionsCollection($typeInstance->getOptionsIds($product), $product);
+            foreach ($itemData['active_selections'] as $option) {
+                if (!empty($option['selection_value'])) {
+                    foreach ($option['selection_value'] as $sel) {
+                        $selectionModel = $selections->getItemById($sel['value_id']);
+                        if ($selectionModel) {
+                            $price += (float)$selectionModel->getFinalPrice() * (float)($sel['qty'] ?? 1);
+                        }
+                    }
+                }
+            }
+        } elseif ($typeId === 'grouped' && !empty($itemData['active_selections'])) {
+            foreach ($itemData['active_selections'] as $sel) {
+                try {
+                    $childProduct = $this->productRepository->getById($sel['id']);
+                    $price += (float)$childProduct->getFinalPrice() * (float)($sel['qty'] ?? 1);
+                } catch (Exception $e) {
+                    $this->logger->warning(
+                        sprintf('Could not load grouped child product ID %s: %s', $sel['id'], $e->getMessage())
+                    );
+                }
+            }
+        } else {
+            $price = (float)$product->getFinalPrice();
+        }
+
+        return $price;
     }
 }

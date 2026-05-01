@@ -21,7 +21,7 @@ use Magento\Framework\Escaper;
  **/
 ?>
 <?php $_lists = $block->getLists(); ?>
-<?php if ($_lists && count($_lists)) : ?>
+<?php if ($_lists && count($_lists)): ?>
     <h2 id="my-orders-title" class="text-2xl mb-6"><?= $escaper->escapeHtml(__('Lists')) ?></h2>
     <div class="table-wrapper orders-history overflow-x-auto card mb-4">
         <table class="data table table-order-items history w-full sm:table-fixed lg:table-auto" id="my-orders-table">
@@ -33,7 +33,7 @@ use Magento\Framework\Escaper;
             </tr>
             </thead>
             <tbody>
-            <?php foreach ($_lists as $_list) : ?>
+            <?php foreach ($_lists as $_list): ?>
                 <tr>
                     <td data-th="<?= $escaper->escapeHtml(__('Order #')) ?>"
                         class="col id p-2 text-start font-normal"><?= $escaper->escapeHtml($_list['list_name']) ?></td>
@@ -49,6 +49,6 @@ use Magento\Framework\Escaper;
             </tbody>
         </table>
     </div>
-<?php else : ?>
+<?php else: ?>
     <div class="message info empty"><span><?= $escaper->escapeHtml($block->getEmptyListMessage()) ?></span></div>
 <?php endif ?>

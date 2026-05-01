@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace BroSolutions\QuickOrder\Model;
 
 use Magento\Framework\Model\AbstractModel;
+use BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule as AutomaticScheduleResourceModel;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
@@ -27,7 +28,7 @@ class AutomaticSchedule extends AbstractModel
     protected function _construct()
     {
         $this->_init(
-            \BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule::class
+            AutomaticScheduleResourceModel::class
         );
     }
 }

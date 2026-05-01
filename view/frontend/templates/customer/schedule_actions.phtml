@@ -1,0 +1,72 @@
+<?php
+/**
+ * Copyright (c) 2025 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Customer\ScheduleView;
+use Magento\Framework\Escaper;
+use BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule;
+
+/**
+ * @var ScheduleView $block
+ * @var Escaper $escaper
+ **/
+
+$collection = $block->getOrder();
+$order = $collection->getFirstItem();
+?>
+<?php if ($order && $order->getId()): ?>
+    <div class="actions-toolbar flex flex-wrap items-center gap-4 mb-6">
+
+        <?php if ($order->getStatus() === AutomaticSchedule::STATUS_ACTIVE): ?>
+            <form action="<?= $escaper->escapeUrl($block->getUrl('quickorder/schedule/changeschedulestatus')) ?>" method="post" class="m-0">
+                <?= /* @noEscape */ $block->getBlockHtml('formkey') ?>
+
+                <input type="hidden" name="schedule_id" value="<?= $escaper->escapeHtmlAttr((string)$order->getScheduleId()) ?>">
+
+                <input type="hidden" name="status" value="<?= $escaper->escapeHtmlAttr((string)AutomaticSchedule::STATUS_PAUSED) ?>">
+
+                <button type="submit" class="action primary btn btn-primary" title="<?= $escaper->escapeHtmlAttr(__('Pause Schedule')) ?>">
+                    <span><?= $escaper->escapeHtml(__('Pause Schedule')) ?></span>
+                </button>
+            </form>
+        <?php elseif ($order->getStatus() === AutomaticSchedule::STATUS_PAUSED || $order->getStatus() === AutomaticSchedule::STATUS_ERROR): ?>
+            <form action="<?= $escaper->escapeUrl($block->getUrl('quickorder/schedule/changeschedulestatus')) ?>" method="post" class="m-0">
+                <?= /* @noEscape */ $block->getBlockHtml('formkey') ?>
+
+                <input type="hidden" name="schedule_id" value="<?= $escaper->escapeHtmlAttr((string)$order->getScheduleId()) ?>">
+
+                <input type="hidden" name="status" value="<?= $escaper->escapeHtmlAttr((string)AutomaticSchedule::STATUS_ACTIVE) ?>">
+
+                <button type="submit" class="action primary btn btn-primary" title="<?= $escaper->escapeHtmlAttr(__('Activate Schedule')) ?>">
+                    <span><?= $escaper->escapeHtml(__('Activate Schedule')) ?></span>
+                </button>
+            </form>
+        <?php endif; ?>
+
+        <form action="<?= $escaper->escapeUrl($block->getUrl('quickorder/schedule/deleteschedule')) ?>"
+              method="post"
+              class="m-0 "
+              onsubmit="return confirm('<?= $escaper->escapeJs(__('Are you sure you want to delete this automated order?')) ?>');">
+            <?= /* @noEscape */ $block->getBlockHtml('formkey') ?>
+
+            <input type="hidden" name="schedule_id" value="<?= $escaper->escapeHtmlAttr((string)$order->getScheduleId()) ?>">
+
+            <button type="submit"
+                    class="action secondary btn btn-secondary text-red-600 border-red-600 hover:bg-red-50 btn-delete"
+                    title="<?= $escaper->escapeHtmlAttr(__('Delete Schedule')) ?>">
+                <span><?= $escaper->escapeHtml(__('Delete Schedule')) ?></span>
+            </button>
+        </form>
+
+    </div>
+<?php endif; ?>

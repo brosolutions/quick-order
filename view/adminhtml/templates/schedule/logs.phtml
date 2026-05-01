@@ -1,0 +1,61 @@
+<?php
+/**
+ * Copyright (c) 2026 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Adminhtml\Schedule\Logs;
+use Magento\Framework\Escaper;
+
+/**
+ * @var Logs $block
+ * @var Escaper $escaper
+ */
+
+$logs = $block->getLogs();
+?>
+<div class="admin__section-item">
+    <div class="admin__section-item-title">
+        <span class="title"><?= $escaper->escapeHtml(__('Execution History (Logs)')) ?></span>
+    </div>
+    <div class="admin__section-item-content">
+        <?php if ($logs->getSize()): ?>
+            <div class="admin__table-wrapper">
+                <table class="data-table admin__table">
+                    <thead>
+                    <tr>
+                        <th class="col-date"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                        <th class="col-status"><?= $escaper->escapeHtml(__('Status')) ?></th>
+                        <th class="col-message"><?= $escaper->escapeHtml(__('Message')) ?></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($logs as $log): ?>
+                        <tr>
+                            <td><?= $escaper->escapeHtml((string)$log->getCreatedAt()) ?></td>
+                            <td>
+                                    <span class="grid-severity-<?= ($log->getStatus() === 'success') ? 'notice' : 'critical' ?>">
+                                        <?= $escaper->escapeHtml(ucfirst((string)$log->getStatus())) ?>
+                                    </span>
+                            </td>
+                            <td><?= $escaper->escapeHtml((string)$log->getMessage()) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="admin__message-empty">
+                <?= $escaper->escapeHtml(__('No execution logs available for this schedule.')) ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>

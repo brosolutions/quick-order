@@ -1,0 +1,267 @@
+<?php
+/**
+ * Copyright (c) 2026 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+
+declare(strict_types=1);
+
+use BroSolutions\QuickOrder\Block\Customer\ScheduleView;
+use BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule;
+use Magento\Framework\Escaper;
+
+/**
+ * @var ScheduleView $block
+ * @var Escaper $escaper
+ **/
+
+$collection = $block->getOrder();
+$order = $collection->getFirstItem();
+
+$actionLabels = [
+    AutomaticSchedule::ACTION_ERROR => __('Stop order with error'),
+    AutomaticSchedule::ACTION_SKIP  => __('Skip product and order the rest'),
+    AutomaticSchedule::ACTION_PAUSE => __('Pause schedule')
+];
+?>
+
+<?php if ($order && $order->getId()): ?>
+
+    <div class="block block-schedule-details mb-10">
+        <div class="block-title text-2xl mb-6">
+            <strong class="font-medium"><?= $escaper->escapeHtml(__('Schedule Details #%1', $order->getScheduleId())) ?></strong>
+        </div>
+        <div class="block-content grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="box box-schedule-info bg-white p-6 rounded-lg border border-gray-200 w-full card">
+                <strong class="box-title block text-base font-semibold mb-4 text-gray-900">
+                    <span><?= $escaper->escapeHtml(__('General Information')) ?></span>
+                </strong>
+                <div class="box-content schedule-box-content text-gray-700 leading-relaxed">
+                    <strong class="text-gray-900"><?= $escaper->escapeHtml(__('List Name:')) ?></strong>
+                    <a class="text-primary hover:underline" href="<?= $escaper->escapeUrl($block->getUrl('customer/account/productlistview/list_id/' . $order->getListId())); ?>">
+                        <?= $escaper->escapeHtml((string)$order->getListName()); ?>
+                    </a><br>
+
+                    <strong class="text-gray-900"><?= $escaper->escapeHtml(__('Status:')) ?></strong>
+                    <?php
+                    $statusLabel = ucfirst((string)$order->getStatus());
+                    $statusClass = 'status-default font-semibold text-gray-800';
+                    if ($order->getStatus() === AutomaticSchedule::STATUS_ACTIVE) {
+                        $statusClass = 'status-active font-semibold text-green-600';
+                    } elseif ($order->getStatus() === AutomaticSchedule::STATUS_PAUSED) {
+                        $statusClass = 'status-paused font-semibold text-orange-500';
+                    } elseif ($order->getStatus() === AutomaticSchedule::STATUS_ERROR) {
+                        $statusClass = 'status-error font-semibold text-red-600';
+                    }
+                    ?>
+                    <span class="<?= $escaper->escapeHtmlAttr($statusClass) ?>">
+                        <?= $escaper->escapeHtml($statusLabel); ?>
+                    </span><br>
+
+                    <strong class="text-gray-900"><?= $escaper->escapeHtml(__('Frequency:')) ?></strong>
+                    <?php
+                    $freqCode = (string)$order->getFrequency();
+                    if ($freqCode === 'monthly_n') {
+                        echo $escaper->escapeHtml((string)__('Every %1 months', $order->getFrequencyValue()));
+                    } else {
+                        echo $escaper->escapeHtml($block->getFrequencyLabel($freqCode));
+                    }
+                    ?><br>
+
+                    <strong class="text-gray-900"><?= $escaper->escapeHtml(__('Timezone:')) ?></strong>
+                    <?= $escaper->escapeHtml((string)$order->getTimezone()); ?>
+                </div>
+            </div>
+
+            <div class="box box-schedule-dates bg-white p-6 rounded-lg border border-gray-200 w-full card">
+                <strong class="box-title block text-base font-semibold mb-4 text-gray-900">
+                    <span><?= $escaper->escapeHtml(__('Timeline')) ?></span>
+                </strong>
+                <div class="box-content schedule-box-content text-gray-700 leading-relaxed">
+                    <strong class="text-gray-900"><?= $escaper->escapeHtml(__('Start at:')) ?></strong> <?= $escaper->escapeHtml($block->formatScheduleDate((string)$order->getStartAt(), (string)$order->getTimezone())); ?>
+                    <br>
+                    <strong class="text-gray-900"><?= $escaper->escapeHtml(__('Next run at:')) ?></strong> <?= $escaper->escapeHtml($block->formatScheduleDate((string)$order->getNextRunAt(), (string)$order->getTimezone())); ?>
+                    <br>
+                    <strong class="text-gray-900"><?= $escaper->escapeHtml(__('Last run at:')) ?></strong> <?= $order->getLastRunAt() ? $escaper->escapeHtml($block->formatScheduleDate((string)$order->getLastRunAt(), (string)$order->getTimezone())) : $escaper->escapeHtml(__('Never')); ?>
+                    <br>
+                    <strong class="text-gray-900"><?= $escaper->escapeHtml(__('Created At:')) ?></strong> <?= $escaper->escapeHtml($block->formatScheduleDate((string)$order->getCreatedAt(), (string)$order->getTimezone())); ?>
+                </div>
+            </div>
+
+            <div class="box box-schedule-validation bg-white p-6 rounded-lg border border-gray-200 w-full md:col-span-2 card block-content">
+                <strong class="box-title block text-base font-semibold mb-4 text-gray-900">
+                    <span><?= $escaper->escapeHtml(__('Product Validation Rules')) ?></span>
+                </strong>
+                <div class="box-content schedule-box-content text-gray-700 leading-relaxed flex flex-wrap gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <strong class="text-gray-900"><?= $escaper->escapeHtml(__('If product is missing or disabled:')) ?></strong><br>
+                        <?= $escaper->escapeHtml($actionLabels[$order->getData('action_missing')] ?? $order->getData('action_missing')); ?>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <strong class="text-gray-900"><?= $escaper->escapeHtml(__('If product is out of stock:')) ?></strong><br>
+                        <?= $escaper->escapeHtml($actionLabels[$order->getData('action_oos')] ?? $order->getData('action_oos')); ?>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <strong class="text-gray-900"><?= $escaper->escapeHtml(__('If product price changes:')) ?></strong><br>
+                        <?php if ($order->getData('action_price') === AutomaticSchedule::ACTION_BLOCK): ?>
+                            <?= $escaper->escapeHtml(__('Block order if price increases more than %1%', (float)$order->getData('price_threshold'))); ?>
+                        <?php else: ?>
+                            <?= $escaper->escapeHtml(__('Allow order at current prices')); ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="block block-order-details-view mb-10 my-6">
+        <div class="block-title text-2xl mb-6">
+            <strong class="font-medium"><?= $escaper->escapeHtml(__('Checkout Information')) ?></strong>
+        </div>
+        <div class="block-content grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="box box-order-shipping-address bg-white p-6 rounded-lg border border-gray-200 w-full card">
+                <strong class="box-title block text-base font-semibold mb-4 text-gray-900">
+                    <span><?= $escaper->escapeHtml(__('Shipping Address')) ?></span>
+                </strong>
+                <div class="box-content schedule-box-content text-gray-700 leading-relaxed">
+                    <?php $shippingData = $block->getAddressData($order->getShippingAddress()); ?>
+                    <?php if (empty($shippingData)): ?>
+                        <?= $escaper->escapeHtml(__('Not specified')) ?>
+                    <?php else: ?>
+                        <address class="address-format not-italic m-0">
+                            <?= $escaper->escapeHtml($shippingData['name']) ?><br>
+                            <?php if (!empty($shippingData['company'])): ?>
+                                <?= $escaper->escapeHtml($shippingData['company']) ?><br>
+                            <?php endif; ?>
+                            <?php foreach ($shippingData['street'] as $streetLine): ?>
+                                <?php if (!empty($streetLine)): ?>
+                                    <?= $escaper->escapeHtml($streetLine) ?><br>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                            <?php
+                            $cityRegionPostcode = array_filter([
+                                $shippingData['city'],
+                                $shippingData['region'],
+                                $shippingData['postcode']
+                            ]);
+                            ?>
+                            <?= $escaper->escapeHtml(implode(', ', $cityRegionPostcode)) ?><br>
+                            <?= $escaper->escapeHtml($shippingData['country']) ?><br>
+                            <?php if (!empty($shippingData['telephone'])): ?>
+                                T: <a class="text-primary hover:underline"
+                                      href="tel:<?= $escaper->escapeHtmlAttr($shippingData['telephone']) ?>"><?= $escaper->escapeHtml($shippingData['telephone']) ?></a>
+                            <?php endif; ?>
+                        </address>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="box box-order-shipping-method bg-white p-6 rounded-lg border border-gray-200 w-full card">
+                <strong class="box-title block text-base font-semibold mb-4 text-gray-900">
+                    <span><?= $escaper->escapeHtml(__('Shipping Method')) ?></span>
+                </strong>
+                <div class="box-content schedule-box-content text-gray-700 leading-relaxed">
+                    <?= $escaper->escapeHtml($block->getShippingMethodTitle($order->getShippingMethod()) ?: __('Not specified')); ?>
+                </div>
+            </div>
+
+            <div class="box box-order-billing-address bg-white p-6 rounded-lg border border-gray-200 w-full card">
+                <strong class="box-title block text-base font-semibold mb-4 text-gray-900">
+                    <span><?= $escaper->escapeHtml(__('Billing Address')) ?></span>
+                </strong>
+                <div class="box-content schedule-box-content text-gray-700 leading-relaxed">
+                    <?php $billingData = $block->getAddressData($order->getBillingAddress()); ?>
+                    <?php if (empty($billingData)): ?>
+                        <?= $escaper->escapeHtml(__('Not specified')) ?>
+                    <?php else: ?>
+                        <address class="address-format not-italic m-0">
+                            <?= $escaper->escapeHtml($billingData['name']) ?><br>
+                            <?php if (!empty($billingData['company'])): ?>
+                                <?= $escaper->escapeHtml($billingData['company']) ?><br>
+                            <?php endif; ?>
+                            <?php foreach ($billingData['street'] as $streetLine): ?>
+                                <?php if (!empty($streetLine)): ?>
+                                    <?= $escaper->escapeHtml($streetLine) ?><br>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                            <?php
+                            $cityRegionPostcode = array_filter([
+                                $billingData['city'],
+                                $billingData['region'],
+                                $billingData['postcode']
+                            ]);
+                            ?>
+                            <?= $escaper->escapeHtml(implode(', ', $cityRegionPostcode)) ?><br>
+                            <?= $escaper->escapeHtml($billingData['country']) ?><br>
+                            <?php if (!empty($billingData['telephone'])): ?>
+                                T: <a class="text-primary hover:underline"
+                                      href="tel:<?= $escaper->escapeHtmlAttr($billingData['telephone']) ?>"><?= $escaper->escapeHtml($billingData['telephone']) ?></a>
+                            <?php endif; ?>
+                        </address>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="box box-order-billing-method bg-white p-6 rounded-lg border border-gray-200 w-full card">
+                <strong class="box-title block text-base font-semibold mb-4 text-gray-900">
+                    <span><?= $escaper->escapeHtml(__('Payment Method')) ?></span>
+                </strong>
+                <div class="box-content schedule-box-content text-gray-700 leading-relaxed">
+                    <?= $escaper->escapeHtml($block->getPaymentMethodTitle($order->getPaymentMethod()) ?: __('Not specified')); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="block block-schedule-logs mb-10">
+        <div class="block-title text-2xl mb-6 pb-2 border-b border-gray-200">
+            <strong class="font-medium"><?= $escaper->escapeHtml(__('Execution History (Logs)')) ?></strong>
+        </div>
+        <div class="block-content">
+            <?php $logs = $block->getScheduleLogs((int)$order->getScheduleId()); ?>
+            <?php if ($logs->getSize()): ?>
+                <div class="table-wrapper overflow-x-auto bg-white p-6 rounded-lg border border-gray-200 mb-4">
+                    <table class="data table w-full sm:table-fixed lg:table-auto text-left border-collapse">
+                        <thead class="text-sm bg-gray-50">
+                        <tr class="border-b border-gray-300">
+                            <th class="p-4 text-start font-semibold text-gray-900"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                            <th class="p-4 text-start font-semibold text-gray-900"><?= $escaper->escapeHtml(__('Status')) ?></th>
+                            <th class="p-4 text-start font-semibold text-gray-900 w-1/2"><?= $escaper->escapeHtml(__('Message')) ?></th>
+                        </tr>
+                        </thead>
+                        <tbody class="text-sm text-gray-700">
+                        <?php foreach ($logs as $log): ?>
+                            <tr class="border-b border-gray-200 hover:bg-gray-50 align-top last:border-0">
+                                <td class="p-4 whitespace-nowrap"><?= $escaper->escapeHtml($block->formatScheduleDate((string)$log->getCreatedAt(), (string)$order->getTimezone())) ?></td>
+                                <td class="p-4">
+                                    <?php
+                                    $logStatusClass = $log->getStatus() === 'success' ? 'text-green-600 font-medium' : 'text-red-600 font-medium';
+                                    ?>
+                                    <span class="<?= $escaper->escapeHtmlAttr($logStatusClass) ?>">
+                                            <?= $escaper->escapeHtml(ucfirst((string)$log->getStatus())) ?>
+                                        </span>
+                                </td>
+                                <td class="p-4"><?= $escaper->escapeHtml($log->getMessage()) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="message info empty p-6 bg-white rounded-lg border border-blue-100 leading-relaxed text-blue-700">
+                    <span><?= $escaper->escapeHtml(__('This schedule has not been executed yet.')) ?></span>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php else: ?>
+    <div class="message error empty p-6 bg-white rounded-lg border border-red-100 leading-relaxed text-red-700">
+        <span><?= $escaper->escapeHtml(__('This schedule no longer exists.')) ?></span>
+    </div>
+<?php endif; ?>

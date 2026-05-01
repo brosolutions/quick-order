@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<!--
+  * Copyright (c) 2026 BroSolutions
+  * All rights reserved
+  *
+  * This product includes proprietary software developed at BroSolutions, Ukraine
+  * For more information see https://www.brosolutions.net/
+  *
+  * To obtain a valid license for using this software please contact us at
+  * contact@brosolutions.net
+  -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="customer_account"/>
+    <head>
+        <css src="BroSolutions_QuickOrder::css/styles.css"/>
+    </head>
+    <body>
+        <referenceContainer name="content">
+            <block class="BroSolutions\QuickOrder\Block\Customer\ScheduleView"
+                   name="schedule_actions"
+                   cacheable="false"
+                   template="BroSolutions_QuickOrder::customer/schedule_actions.phtml"
+                   before="-" />
+
+            <block class="BroSolutions\QuickOrder\Block\Customer\ScheduleView"
+                   name="schedule_view"
+                   cacheable="false"
+                   template="BroSolutions_QuickOrder::customer/schedule_view.phtml" />
+        </referenceContainer>
+    </body>
+</page>
+
+

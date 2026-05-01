@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -29,7 +29,9 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * @copyright  Copyright (c) 2025 BroSolutions
+ * Controller to save automated schedule.
+ *
+ * @copyright  Copyright (c) 2026 BroSolutions
  * @link       https://www.brosolutions.net/
  */
 class SaveSchedule implements HttpPostActionInterface
@@ -65,7 +67,7 @@ class SaveSchedule implements HttpPostActionInterface
     private $logger;
 
     /**
-     * @var SaveSchedule
+     * @var ServiceSaveSchedule
      */
     private $saveSchedule;
 
@@ -75,6 +77,8 @@ class SaveSchedule implements HttpPostActionInterface
     private $formKeyValidator;
 
     /**
+     * Constructor
+     *
      * @param Http $request
      * @param JsonFactory $resultJsonFactory
      * @param FormKeyValidator $formKeyValidator
@@ -86,15 +90,15 @@ class SaveSchedule implements HttpPostActionInterface
      * @param ServiceSaveSchedule $saveSchedule
      */
     public function __construct(
-        Http             $request,
-        JsonFactory      $resultJsonFactory,
+        Http $request,
+        JsonFactory $resultJsonFactory,
         FormKeyValidator $formKeyValidator,
         RedirectFactory $redirectFactory,
         CollectionFactory $collectionFactory,
         CustomerSession $customerSession,
         ManagerInterface $messageManager,
-        LoggerInterface  $logger,
-        ServiceSaveSchedule $saveSchedule,
+        LoggerInterface $logger,
+        ServiceSaveSchedule $saveSchedule
     ) {
         $this->request = $request;
         $this->redirectFactory = $redirectFactory;
@@ -107,16 +111,16 @@ class SaveSchedule implements HttpPostActionInterface
     }
 
     /**
-     * Add to cart
+     * Execute action
      *
      * @return Redirect
      */
     public function execute(): Redirect
     {
         $params = $this->request->getParams();
-
         $resultRedirect = $this->redirectFactory->create();
-        $listId = (int)$params['list_id'];
+        $listId = (int)($params['list_id'] ?? 0);
+
         try {
             if (!$this->customerSession->isLoggedIn()) {
                 return $resultRedirect->setPath('customer/account/login');
@@ -136,29 +140,25 @@ class SaveSchedule implements HttpPostActionInterface
             /** @var ProductList $list */
             $list = $collection->getFirstItem();
 
-            if (!$listId = $list->getId()) {
+            if (!$list->getId()) {
                 throw new LocalizedException(__('The list no longer exists.'));
             }
 
             if ((int)$list->getCustomerId() !== (int)$this->customerSession->getCustomerId()) {
-                throw new LocalizedException(__('You are not allowed to create schedule for this list.'));
+                throw new LocalizedException(__('You are not allowed to create a schedule for this list.'));
             }
 
             $this->saveSchedule->execute($params);
 
             $this->messageManager->addSuccessMessage(__('The schedule has been created for the list.'));
+
         } catch (LocalizedException $e) {
             $this->messageManager->addErrorMessage($e->getMessage());
         } catch (Throwable $e) {
-            $this->logger->error(sprintf('Error deleting list: %s', $e->getMessage()), $e->getTrace());
-            $this->messageManager->addErrorMessage(
-                __('Something went wrong while adding to the cart.')
-            );
+            $this->logger->error(sprintf('Error creating schedule: %s', $e->getMessage()), $e->getTrace());
+            $this->messageManager->addErrorMessage(__('Something went wrong while creating the schedule.'));
         }
 
-        return $resultRedirect->setPath(
-            'customer/account/automatedorders',
-            ['list_id' => $listId]
-        );
+        return $resultRedirect->setPath('customer/account/automatedorders');
     }
 }
