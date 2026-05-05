@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -20,7 +20,7 @@ use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 
 /**
- * @copyright  Copyright (c) 2025 BroSolutions
+ * @copyright  Copyright (c) 2026 BroSolutions
  * @link       https://www.brosolutions.net/
  */
 class GroupedRenderer extends Template
@@ -88,7 +88,10 @@ class GroupedRenderer extends Template
      */
     public function getChildItemRowTotalHtml(Product $product, array $_childItemsQty): string
     {
+        $productId = $product->getEntityId();
+        $qty = $_childItemsQty[$productId] ?? 1;
+
         return $this->pricingHelper->currency($product->getFinalPrice() *
-            (float)$_childItemsQty[$product->getEntityId()], true, false);
+            (float)$qty, true, false);
     }
 }

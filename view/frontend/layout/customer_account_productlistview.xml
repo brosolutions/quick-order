@@ -35,6 +35,8 @@
                            as="grouped" cacheable="false"/>
                 </block>
             </block>
+            <block class="Magento\Framework\View\Element\Template" name="qo.price.history.modal"
+                   template="BroSolutions_QuickOrder::customer/price_history_modal.phtml" after="-"/>
         </referenceContainer>
     </body>
 </page>

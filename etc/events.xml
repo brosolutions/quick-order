@@ -16,4 +16,7 @@
     <event name="brosolutions_quickorder_schedule_error">
         <observer name="brosolutions_quickorder_schedule_error_observer" instance="BroSolutions\QuickOrder\Observer\ScheduleErrorObserver" />
     </event>
+    <event name="brosolutions_quickorder_price_changed">
+        <observer name="brosolutions_quickorder_price_changed_observer" instance="BroSolutions\QuickOrder\Observer\PriceChangeObserver" />
+    </event>
 </config>

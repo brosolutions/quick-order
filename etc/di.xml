@@ -42,4 +42,15 @@
             </argument>
         </arguments>
     </type>
+
+    <type name="BroSolutions\QuickOrder\Service\CheckSchedulePrices">
+        <arguments>
+            <argument name="strategies" xsi:type="array">
+                <item name="simple" xsi:type="object">BroSolutions\QuickOrder\Service\Quote\Product\Type\SimpleStrategy</item>
+                <item name="configurable" xsi:type="object">BroSolutions\QuickOrder\Service\Quote\Product\Type\ConfigurableStrategy</item>
+                <item name="bundle" xsi:type="object">BroSolutions\QuickOrder\Service\Quote\Product\Type\BundleStrategy</item>
+                <item name="grouped" xsi:type="object">BroSolutions\QuickOrder\Service\Quote\Product\Type\GroupedStrategy</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

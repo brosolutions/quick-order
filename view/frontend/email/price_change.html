@@ -1,0 +1,14 @@
+<!--@subject {{trans "Prices have changed for some products"}} @-->
+<!--@vars {
+"var customerName":"Customer Name",
+"var $scheduleId":"Schedule Id",
+"var changesText":"Changes Text"
+} @-->
+{{template config_path="design/email/header_template"}}
+<p>{{trans "Dear %customer_name," customer_name=$customerName}}</p>
+<p>{{trans "We noticed that prices have changed for some products in your automated order schedule #%schedule_id." schedule_id=$scheduleId}}</p>
+<p><strong>{{trans "Price changes details:"}}</strong><br>
+    {{var changesText|raw}}
+</p>
+<p>{{trans "Please log in to your account to review your schedule settings."}}</p>
+{{template config_path="design/email/footer_template"}}

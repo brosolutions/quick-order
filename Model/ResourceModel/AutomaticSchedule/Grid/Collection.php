@@ -19,6 +19,8 @@ use Magento\Framework\Event\ManagerInterface as EventManager;
 use Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult;
 use Psr\Log\LoggerInterface as Logger;
 use Zend_Db_Expr;
+use Magento\Framework\Exception\LocalizedException;
+use BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule;
 
 /**
  * Class Collection
@@ -37,16 +39,27 @@ class Collection extends SearchResult
 
     /**
      * Constructor
+     *
+     * @param EntityFactory $entityFactory
+     * @param Logger $logger
+     * @param FetchStrategy $fetchStrategy
+     * @param EventManager $eventManager
+     * @param string $mainTable
+     * @param string $resourceModel
+     * @param string $identifierName
+     * @param string|null $connectionName
+     * @throws LocalizedException
      */
+    // phpcs:disable Generic.CodeAnalysis.UselessOverridingMethod
     public function __construct(
         EntityFactory $entityFactory,
         Logger $logger,
         FetchStrategy $fetchStrategy,
         EventManager $eventManager,
-                      $mainTable = 'brosolutions_quickorder_schedule',
-                      $resourceModel = \BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule::class,
-                      $identifierName = 'schedule_id',
-                      $connectionName = null
+        $mainTable = 'brosolutions_quickorder_schedule',
+        $resourceModel = AutomaticSchedule::class,
+        $identifierName = 'schedule_id',
+        $connectionName = null
     ) {
         parent::__construct(
             $entityFactory,
@@ -59,6 +72,7 @@ class Collection extends SearchResult
             $connectionName
         );
     }
+    // phpcs:enable Generic.CodeAnalysis.UselessOverridingMethod
 
     /**
      * Initialize select
@@ -69,7 +83,6 @@ class Collection extends SearchResult
     {
         parent::_initSelect();
 
-        // ГОЛОВНЕ ВИПРАВЛЕННЯ: примусово створюємо колонку 'id' для UI-компонента JS
         $this->getSelect()->columns(['id' => 'main_table.schedule_id']);
 
         $this->getSelect()->joinLeft(
@@ -96,7 +109,6 @@ class Collection extends SearchResult
             new Zend_Db_Expr("CONCAT_WS(' ', customer_table.firstname, customer_table.lastname)")
         );
 
-        // Гарантуємо відсутність дублювання на рівні SQL
         $this->getSelect()->group('main_table.schedule_id');
 
         return $this;

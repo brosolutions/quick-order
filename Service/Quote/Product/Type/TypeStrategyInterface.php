@@ -36,11 +36,12 @@ interface TypeStrategyInterface
     public function addToQuote(Quote $quote, ProductInterface $product, array $itemData, int $storeId): void;
 
     /**
-     * Calculates the configured price based on selected options.
+     * Calculates the configured price based on selected options and customer group.
      *
      * @param ProductInterface $product
      * @param array $itemData
+     * @param int|null $customerGroupId
      * @return float
      */
-    public function calculatePrice(ProductInterface $product, array $itemData): float;
+    public function calculatePrice(ProductInterface $product, array $itemData, ?int $customerGroupId = null): float;
 }

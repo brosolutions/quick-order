@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -20,7 +20,7 @@ use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 
 /**
- * @copyright  Copyright (c) 2025 BroSolutions
+ * @copyright  Copyright (c) 2026 BroSolutions
  * @link       https://www.brosolutions.net/
  */
 class BundleRenderer extends Template
@@ -135,11 +135,12 @@ class BundleRenderer extends Template
     public function getItemPrice(array $_childItemsOptions, array $_childItemsQty): float
     {
         $price = 0;
-        foreach ($_childItemsOptions as $optionId => $_option) {
-            $price = $price + $_option['final_price'] * $_childItemsQty[$optionId];
+        foreach ($_childItemsOptions as $productId => $_option) {
+            $qty = $_childItemsQty[$productId] ?? 1;
+            $price += ($_option['final_price'] ?? 0) * (float)$qty;
         }
 
-        return $price;
+        return (float)$price;
     }
 
     /**
@@ -172,8 +173,11 @@ class BundleRenderer extends Template
      */
     public function getChildItemRowTotalHtml(ProductListItem $item, array $_childItemsQty): string
     {
+        $productId = $item->getProduct()->getEntityId();
+        $qty = $_childItemsQty[$productId] ?? 1;
+
         return $this->pricingHelper->currency($item->getProduct()->getFinalPrice() *
-            (float)$_childItemsQty[$item->getProduct()->getEntityId()], true, false);
+            (float)$qty, true, false);
     }
 
     /**
@@ -198,6 +202,7 @@ class BundleRenderer extends Template
      */
     public function getOptionTitle(ProductListItem $childItem, array $_childItemsOptions): string
     {
-        return $_childItemsOptions[$childItem->getProduct()->getEntityId()]['option_title'];
+        $productId = $childItem->getProduct()->getEntityId();
+        return $_childItemsOptions[$productId]['option_title'] ?? '';
     }
 }

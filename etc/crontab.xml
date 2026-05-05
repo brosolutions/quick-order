@@ -13,5 +13,8 @@
         <job name="brosolutions_quickorder_process_schedules" instance="BroSolutions\QuickOrder\Cron\ProcessAutomatedOrders" method="execute">
             <schedule>* * * * *</schedule>
         </job>
+        <job name="brosolutions_quickorder_price_alert" instance="BroSolutions\QuickOrder\Cron\CheckPrices" method="execute">
+            <config_path>brosolution_quick_order/scheduled_automated_orders/price_alert_cron_expr</config_path>
+        </job>
     </group>
 </config>

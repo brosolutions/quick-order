@@ -49,6 +49,18 @@
                     <label><![CDATA[Offline Shipping Methods]]></label>
                     <source_model>BroSolutions\QuickOrder\Model\Config\Source\OfflineShippingMethods</source_model>
                 </field>
+                <field id="price_alert_enable" translate="label comment" type="select" sortOrder="25" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Enable Price Alerts Cron</label>
+                    <comment>Independently check for price changes and send email alerts.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="price_alert_cron_expr" translate="label comment" type="text" sortOrder="26" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label><![CDATA[Price Alerts Cron Expression]]></label>
+                    <comment><![CDATA[Default: 0 * * * * (Every hour)]]></comment>
+                    <depends>
+                        <field id="price_alert_enable">1</field>
+                    </depends>
+                </field>
             </group>
         </section>
     </system>

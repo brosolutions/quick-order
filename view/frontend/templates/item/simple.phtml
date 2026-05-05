@@ -1,7 +1,6 @@
 <?php
-
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -10,7 +9,6 @@
  * To obtain a valid license for using this software please contact us at
  * contact@brosolutions.net
  */
-
 declare(strict_types=1);
 
 use BroSolutions\QuickOrder\Block\Item\Renderer\SimpleRenderer;
@@ -21,7 +19,8 @@ use Magento\Framework\Escaper;
  * @var Escaper $escaper
  **/
 
-$_item = $block->getItem(); ?>
+$_item = $block->getItem();
+?>
 
 <tr>
     <?php if ($_item->getIsNotAvailable()): ?>
@@ -31,6 +30,7 @@ $_item = $block->getItem(); ?>
     <?php else: ?>
         <td class="col name p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Product Name')) ?>">
             <span class="product name"><?= $escaper->escapeHtml($block->getName()) ?></span>
+
             <?php if ($_options = $block->getItemOptions()): ?>
                 <dl class="item-options product-item-name">
                     <?php foreach ($_options as $_option): ?>
@@ -41,9 +41,11 @@ $_item = $block->getItem(); ?>
             <?php endif; ?>
         </td>
     <?php endif; ?>
+
     <td class="col sku p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('SKU')) ?>">
         <span><?= $escaper->escapeHtml($block->prepareSku()) ?></span>
     </td>
+
     <?php if ($_item->getIsNotAvailable()): ?>
         <td class="col price p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Price')) ?>">
         </td>
@@ -52,10 +54,24 @@ $_item = $block->getItem(); ?>
             <span> <?= $escaper->escapeHtml($block->getItemPriceHtml()) ?></span>
         </td>
     <?php endif; ?>
+
     <td class="col qty p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Qty')) ?>">
         <span><?= $escaper->escapeHtml($block->getItemQuantity()) ?></span>
     </td>
+
     <td class="col subtotal p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Subtotal')) ?>">
         <span><?= $escaper->escapeHtml($block->getItemRowTotalHtml()) ?></span>
+    </td>
+
+    <td class="col actions p-2 text-center font-normal">
+        <?php if (!$_item->getIsNotAvailable()): ?>
+            <a href="#" class="action-price-history inline-block cursor-pointer text-gray-500 hover:text-primary"
+               data-sku="<?= $escaper->escapeHtmlAttr($block->getSku()) ?>"
+               title="<?= $escaper->escapeHtmlAttr(__('View Price History')) ?>">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+            </a>
+        <?php endif; ?>
     </td>
 </tr>

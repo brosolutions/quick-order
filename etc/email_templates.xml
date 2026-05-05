@@ -12,4 +12,5 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Email:etc/email_templates.xsd">
     <template id="brosolutions_quickorder_schedule_success" label="Automated Schedule Success" file="schedule_success.html" type="html" module="BroSolutions_QuickOrder" area="frontend"/>
     <template id="brosolutions_quickorder_schedule_error" label="Automated Schedule Error" file="schedule_error.html" type="html" module="BroSolutions_QuickOrder" area="frontend"/>
+    <template id="brosolutions_quickorder_price_change" label="Automated Schedule Price Change" file="price_change.html" type="html" module="BroSolutions_QuickOrder" area="frontend"/>
 </config>

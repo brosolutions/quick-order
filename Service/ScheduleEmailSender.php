@@ -124,6 +124,38 @@ class ScheduleEmailSender
     }
 
     /**
+     * Send price change email notification.
+     *
+     * @param string $customerEmail
+     * @param string $customerName
+     * @param string $scheduleId
+     * @param string $changesText
+     * @param int $storeId
+     * @return void
+     */
+    public function sendPriceChangeEmail(
+        string $customerEmail,
+        string $customerName,
+        string $scheduleId,
+        string $changesText,
+        int $storeId
+    ): void {
+        $templateVars = [
+            'customerName' => $customerName,
+            'scheduleId'   => $scheduleId,
+            'changesText'  => $changesText
+        ];
+
+        $this->sendEmail(
+            'brosolutions_quickorder_price_change',
+            $customerEmail,
+            $customerName,
+            $templateVars,
+            $storeId
+        );
+    }
+
+    /**
      * Execute the email sending process.
      *
      * @param string $templateId

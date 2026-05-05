@@ -333,3 +333,48 @@
     font-weight: 600;
     color: red;
 }
+
+
+/* --- Universal Price History Modal --- */
+.customer-account-productlistview .qo-modal-overlay {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+}
+.customer-account-productlistview .qo-modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.customer-account-productlistview .qo-modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+.customer-account-productlistview .qo-modal-close:hover,
+.customer-account-productlistview .qo-modal-close:focus {
+    color: #000;
+    text-decoration: none;
+}
+.customer-account-productlistview  .qo-chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    margin-top: 15px;
+}
+.customer-account-productlistview .action-price-history svg {
+    vertical-align: text-bottom;
+}

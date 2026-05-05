@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -9,7 +9,6 @@
  * To obtain a valid license for using this software please contact us at
  * contact@brosolutions.net
  */
-
 declare(strict_types=1);
 
 use BroSolutions\QuickOrder\Block\Customer\Items;
@@ -32,20 +31,20 @@ use Magento\Framework\Escaper;
             <th class="col price p-2 text-start"><?= $escaper->escapeHtml(__('Price')) ?></th>
             <th class="col qty p-2 text-start"><?= $escaper->escapeHtml(__('Qty')) ?></th>
             <th class="col subtotal p-2 text-start"><?= $escaper->escapeHtml(__('Subtotal')) ?></th>
+            <th class="col actions p-2 text-center"></th>
         </tr>
         </thead>
 
         <tbody>
         <?php foreach ($block->getItems() as $item): ?>
             <?php if (!empty($item->getType() !== 'groupped')): ?>
-                <?= $block->renderItem($item) // @codingStandardsIgnoreLine ?>
+                <?= $block->renderItem($item) // @codingStandardsIgnoreLine?>
             <?php endif ?>
         <?php endforeach; ?>
         </tbody>
     </table>
 </div>
 <div class="list-actions-block">
-    <!-- CLONE LIST -->
     <form action="<?= $escaper->escapeUrl($block->getCloneListUrl()) ?>"
           method="post"
           class="inline-form">
@@ -57,7 +56,6 @@ use Magento\Framework\Escaper;
         </button>
     </form>
 
-    <!-- DELETE LIST -->
     <form action="<?= $escaper->escapeUrl($block->getDeleteListUrl()) ?>"
           method="post"
           onsubmit="return confirm('<?= $escaper->escapeJs(__('Are you sure you want to delete this list?')) ?>');">
@@ -68,7 +66,6 @@ use Magento\Framework\Escaper;
         </button>
     </form>
 
-    <!-- CHANGE LIST NAME -->
     <form class="block-change-list-name " action="<?= $escaper->escapeUrl($block->getChangeListNameUrl()) ?>"
           method="post">
         <?= $block->getBlockHtml('formkey'); ?>
@@ -78,7 +75,6 @@ use Magento\Framework\Escaper;
         </button>
     </form>
 
-    <!-- ADD TO CART -->
     <form action="<?= $escaper->escapeUrl($block->getAddToCartUrl()) ?>"
           method="post">
         <?= $block->getBlockHtml('formkey'); ?>

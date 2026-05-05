@@ -13,13 +13,14 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Service\Quote\Product\Type;
 
+use Exception;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Framework\DataObject;
 use Magento\Quote\Model\Quote;
-use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Psr\Log\LoggerInterface;
-use Exception;
 
 /**
  * Handles adding grouped products to the quote.
@@ -32,12 +33,12 @@ class GroupedStrategy implements TypeStrategyInterface
     /**
      * @var ProductRepositoryInterface
      */
-    private ProductRepositoryInterface $productRepository;
+    private $productRepository;
 
     /**
      * @var LoggerInterface
      */
-    private LoggerInterface $logger;
+    private $logger;
 
     /**
      * Constructor.
@@ -74,16 +75,9 @@ class GroupedStrategy implements TypeStrategyInterface
                 }
 
                 $childBuyRequest = new DataObject(['qty' => (float)$sel['qty']]);
-
                 $quote->addProduct($childProduct, $childBuyRequest);
             } catch (Exception $e) {
-                $this->logger->warning(
-                    sprintf(
-                        'Failed to add grouped child product ID %s to quote: %s',
-                        $sel['id'],
-                        $e->getMessage()
-                    )
-                );
+                $this->logger->warning('Failed to add grouped child product: ' . $e->getMessage());
             }
         }
     }
@@ -91,22 +85,21 @@ class GroupedStrategy implements TypeStrategyInterface
     /**
      * @inheritDoc
      */
-    public function calculatePrice(ProductInterface $product, array $itemData): float
+    public function calculatePrice(ProductInterface $product, array $itemData, ?int $customerGroupId = null): float
     {
         $price = 0.0;
         if (!empty($itemData['active_selections'])) {
             foreach ($itemData['active_selections'] as $sel) {
                 try {
+                    /** @var Product $childProduct */
                     $childProduct = $this->productRepository->getById($sel['id']);
+                    if ($customerGroupId !== null) {
+                        $childProduct->setCustomerGroupId($customerGroupId);
+                    }
                     $price += (float)$childProduct->getFinalPrice() * (float)($sel['qty'] ?? 1);
                 } catch (Exception $e) {
-                    $this->logger->warning(
-                        sprintf(
-                            'Could not load grouped child product ID %s for price calculation: %s',
-                            $sel['id'],
-                            $e->getMessage()
-                        )
-                    );
+                    $this->logger->warning('Could not load grouped child product for price calc: ' .
+                        $e->getMessage());
                 }
             }
         }

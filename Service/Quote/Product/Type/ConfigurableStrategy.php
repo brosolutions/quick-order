@@ -16,10 +16,10 @@ namespace BroSolutions\QuickOrder\Service\Quote\Product\Type;
 use Exception;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Framework\DataObject;
 use Magento\Quote\Model\Quote;
 use Psr\Log\LoggerInterface;
-use Magento\Catalog\Model\Product;
 
 /**
  * Handles adding configurable products to the quote.
@@ -32,12 +32,12 @@ class ConfigurableStrategy implements TypeStrategyInterface
     /**
      * @var ProductRepositoryInterface
      */
-    private ProductRepositoryInterface $productRepository;
+    private $productRepository;
 
     /**
      * @var LoggerInterface
      */
-    private LoggerInterface $logger;
+    private $logger;
 
     /**
      * Constructor.
@@ -82,23 +82,28 @@ class ConfigurableStrategy implements TypeStrategyInterface
     /**
      * @inheritDoc
      */
-    public function calculatePrice(ProductInterface $product, array $itemData): float
+    public function calculatePrice(ProductInterface $product, array $itemData, ?int $customerGroupId = null): float
     {
         if (!empty($itemData['active_product']['entity_id'])) {
             try {
+                /** @var Product $childProduct */
                 $childProduct = $this->productRepository->getById($itemData['active_product']['entity_id']);
+                if ($customerGroupId !== null) {
+                    $childProduct->setCustomerGroupId($customerGroupId);
+                }
                 return (float)$childProduct->getFinalPrice();
             } catch (Exception $e) {
-                $this->logger->warning(
-                    sprintf(
-                        'Could not load configurable child product ID %s for price calculation: %s',
-                        $itemData['active_product']['entity_id'],
-                        $e->getMessage()
-                    )
-                );
+                $this->logger->warning('Could not load configurable child product: ' . $e->getMessage());
             }
         }
-        /** @var Product $product */
-        return (float)$product->getFinalPrice();
+
+        /** @var Product $productModel */
+        $productModel = $product;
+
+        if ($customerGroupId !== null) {
+            $productModel->setCustomerGroupId($customerGroupId);
+        }
+
+        return (float)$productModel->getFinalPrice();
     }
 }

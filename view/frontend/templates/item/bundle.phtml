@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -9,7 +9,6 @@
  * To obtain a valid license for using this software please contact us at
  * contact@brosolutions.net
  */
-
 declare(strict_types=1);
 
 use BroSolutions\QuickOrder\Block\Item\Renderer\BundleRenderer;
@@ -32,8 +31,7 @@ $_childItemsOptions = $_item->getChildItemsOptions();
             </td>
         <?php else: ?>
             <td class="col name p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Product Name')) ?>">
-                <span
-                    class="product name product-item-name"><strong><?= $escaper->escapeHtml($block->getName()) ?></strong></span>
+                <span class="product name product-item-name"><strong><?= $escaper->escapeHtml($block->getName()) ?></strong></span>
             </td>
         <?php endif; ?>
         <td class="col sku p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('SKU')) ?>">
@@ -58,6 +56,17 @@ $_childItemsOptions = $_item->getChildItemsOptions();
                 <span><?= $escaper->escapeHtml($block->getItemRowTotalHtml($_childItemsOptions, $_childItemsQty)) ?></span>
             </td>
         <?php endif; ?>
+        <td class="col actions p-2 text-center font-normal">
+            <?php if ($_item->isAvailable()): ?>
+                <a href="#" class="action-price-history inline-block cursor-pointer text-gray-500 hover:text-primary"
+                   data-sku="<?= $escaper->escapeHtmlAttr($block->getSku()) ?>"
+                   title="<?= $escaper->escapeHtmlAttr(__('View Price History')) ?>">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                </a>
+            <?php endif; ?>
+        </td>
     </tr>
 
 <?php if ($_item->isAvailable()): ?>
@@ -70,8 +79,7 @@ $_childItemsOptions = $_item->getChildItemsOptions();
             <?php else: ?>
                 <td style="border: none;" class="col name p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('Product Name')) ?>">
                     <strong><?= $escaper->escapeHtml($block->getOptionTitle($childItem, $_childItemsOptions)) ?></strong>
-                    <span
-                        class="product name product-item-name"><?= $escaper->escapeHtml($childItem->getName()) ?></span>
+                    <span class="product name product-item-name"><?= $escaper->escapeHtml($childItem->getName()) ?></span>
                 </td>
             <?php endif; ?>
             <td style="border: none;" class="col sku p-2 text-start font-normal" data-th="<?= $escaper->escapeHtml(__('SKU')) ?>">
@@ -96,6 +104,7 @@ $_childItemsOptions = $_item->getChildItemsOptions();
                     <span><?= $escaper->escapeHtml($block->getChildItemRowTotalHtml($childItem, $_childItemsQty)) ?></span>
                 </td>
             <?php endif; ?>
+            <td style="border: none;" class="col actions p-2 text-center font-normal"></td>
         </tr>
     <?php endforeach; ?>
 <?php endif; ?>

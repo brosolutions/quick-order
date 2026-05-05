@@ -84,4 +84,16 @@
         <constraint xsi:type="primary" referenceId="PRIMARY"><column name="log_id"/></constraint>
         <constraint xsi:type="foreign" referenceId="FK_QO_LOG_SCHEDULE_ID" table="brosolutions_quickorder_schedule_log" column="schedule_id" referenceTable="brosolutions_quickorder_schedule" referenceColumn="schedule_id" onDelete="CASCADE"/>
     </table>
+
+    <table name="brosolutions_quickorder_price_history" resource="default" engine="innodb" comment="QuickOrder Price History">
+        <column xsi:type="bigint" name="history_id" unsigned="true" nullable="false" identity="true" comment="History ID"/>
+        <column xsi:type="bigint" name="schedule_id" unsigned="true" nullable="false" comment="Schedule ID"/>
+        <column xsi:type="varchar" name="sku" length="64" nullable="false" comment="Product SKU"/>
+        <column xsi:type="decimal" name="old_price" precision="12" scale="4" nullable="false" comment="Old Price"/>
+        <column xsi:type="decimal" name="new_price" precision="12" scale="4" nullable="false" comment="New Price"/>
+        <column xsi:type="timestamp" name="changed_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Change Date"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY"><column name="history_id"/></constraint>
+        <constraint xsi:type="foreign" referenceId="FK_QO_PRICE_HIST_SCHED" table="brosolutions_quickorder_price_history" column="schedule_id" referenceTable="brosolutions_quickorder_schedule" referenceColumn="schedule_id" onDelete="CASCADE"/>
+        <index referenceId="IDX_QO_PRICE_HIST_SKU"><column name="sku"/></index>
+    </table>
 </schema>

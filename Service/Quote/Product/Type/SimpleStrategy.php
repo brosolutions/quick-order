@@ -14,9 +14,9 @@ declare(strict_types=1);
 namespace BroSolutions\QuickOrder\Service\Quote\Product\Type;
 
 use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Model\Product;
 use Magento\Framework\DataObject;
 use Magento\Quote\Model\Quote;
-use Magento\Catalog\Model\Product;
 
 /**
  * Handles adding simple products to the quote.
@@ -38,9 +38,15 @@ class SimpleStrategy implements TypeStrategyInterface
     /**
      * @inheritDoc
      */
-    public function calculatePrice(ProductInterface $product, array $itemData): float
+    public function calculatePrice(ProductInterface $product, array $itemData, ?int $customerGroupId = null): float
     {
-        /** @var Product $product */
-        return (float)$product->getFinalPrice();
+        /** @var Product $productModel */
+        $productModel = $product;
+
+        if ($customerGroupId !== null) {
+            $productModel->setCustomerGroupId($customerGroupId);
+        }
+
+        return (float)$productModel->getFinalPrice();
     }
 }

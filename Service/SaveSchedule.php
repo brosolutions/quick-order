@@ -21,6 +21,7 @@ use Exception;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Serialize\Serializer\Json;
@@ -89,6 +90,11 @@ class SaveSchedule
     private $logger;
 
     /**
+     * @var CustomerSession
+     */
+    private $customerSession;
+
+    /**
      * Constructor
      *
      * @param AutomaticScheduleFactory $scheduleFactory
@@ -99,6 +105,7 @@ class SaveSchedule
      * @param ProductRepositoryInterface $productRepository
      * @param CreateDataAddListToCart $createDataAddListToCart
      * @param LoggerInterface $logger
+     * @param CustomerSession $customerSession
      */
     public function __construct(
         AutomaticScheduleFactory $scheduleFactory,
@@ -108,7 +115,8 @@ class SaveSchedule
         CalculateNextRun $calculateNextRun,
         ProductRepositoryInterface $productRepository,
         CreateDataAddListToCart $createDataAddListToCart,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        CustomerSession $customerSession
     ) {
         $this->scheduleFactory = $scheduleFactory;
         $this->resource = $resource;
@@ -118,6 +126,7 @@ class SaveSchedule
         $this->productRepository = $productRepository;
         $this->createDataAddListToCart = $createDataAddListToCart;
         $this->logger = $logger;
+        $this->customerSession = $customerSession;
     }
 
     /**
@@ -227,33 +236,48 @@ class SaveSchedule
     }
 
     /**
-     * Calculates the exact price based on product type and selected options
+     *  Calculates the exact price based on product type and selected options.
      *
      * @param ProductInterface $product
      * @param array $itemData
      * @return float
+     * @throws LocalizedException
+     * @throws NoSuchEntityException
      */
     private function calculateConfiguredPrice(ProductInterface $product, array $itemData): float
     {
-        /** @var \Magento\Catalog\Model\Product $product */
+        $customerGroupId = $this->customerSession->getCustomerGroupId();
+
+        /** @var \Magento\Catalog\Model\Product $productModel */
+        $productModel = $product;
+        $productModel->setCustomerGroupId($customerGroupId);
+
         $price = 0.0;
         $typeId = $itemData['type_id'] ?? 'simple';
 
         if ($typeId === 'configurable' && !empty($itemData['active_product']['entity_id'])) {
             try {
+                /** @var \Magento\Catalog\Model\Product $childProduct */
                 $childProduct = $this->productRepository->getById($itemData['active_product']['entity_id']);
+                $childProduct->setCustomerGroupId($customerGroupId);
                 $price = (float)$childProduct->getFinalPrice();
             } catch (Exception $e) {
-                $price = (float)$product->getFinalPrice();
+                $price = (float)$productModel->getFinalPrice();
             }
         } elseif ($typeId === 'bundle' && !empty($itemData['active_selections'])) {
-            $typeInstance = $product->getTypeInstance();
-            $selections = $typeInstance->getSelectionsCollection($typeInstance->getOptionsIds($product), $product);
+            /** @var \Magento\Bundle\Model\Product\Type $typeInstance */
+            $typeInstance = $productModel->getTypeInstance();
+            $selections = $typeInstance->getSelectionsCollection(
+                $typeInstance->getOptionsIds($productModel),
+                $productModel
+            );
             foreach ($itemData['active_selections'] as $option) {
                 if (!empty($option['selection_value'])) {
                     foreach ($option['selection_value'] as $sel) {
+                        /** @var \Magento\Catalog\Model\Product $selectionModel */
                         $selectionModel = $selections->getItemById($sel['value_id']);
                         if ($selectionModel) {
+                            $selectionModel->setCustomerGroupId($customerGroupId);
                             $price += (float)$selectionModel->getFinalPrice() * (float)($sel['qty'] ?? 1);
                         }
                     }
@@ -262,7 +286,9 @@ class SaveSchedule
         } elseif ($typeId === 'grouped' && !empty($itemData['active_selections'])) {
             foreach ($itemData['active_selections'] as $sel) {
                 try {
+                    /** @var \Magento\Catalog\Model\Product $childProduct */
                     $childProduct = $this->productRepository->getById($sel['id']);
+                    $childProduct->setCustomerGroupId($customerGroupId);
                     $price += (float)$childProduct->getFinalPrice() * (float)($sel['qty'] ?? 1);
                 } catch (Exception $e) {
                     $this->logger->warning(
@@ -271,7 +297,7 @@ class SaveSchedule
                 }
             }
         } else {
-            $price = (float)$product->getFinalPrice();
+            $price = (float)$productModel->getFinalPrice();
         }
 
         return $price;

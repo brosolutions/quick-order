@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -23,7 +23,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
- * @copyright  Copyright (c) 2025 BroSolutions
+ * @copyright  Copyright (c) 2026 BroSolutions
  * @link       https://www.brosolutions.net/
  */
 class CreateAutomatedOrder implements HttpPostActionInterface

@@ -17,7 +17,7 @@ use BroSolutions\QuickOrder\Exception\PauseScheduleException;
 use BroSolutions\QuickOrder\Model\AutomaticSchedule;
 use BroSolutions\QuickOrder\Model\ResourceModel\AutomaticSchedule as ScheduleResource;
 use BroSolutions\QuickOrder\Service\Product\BulkLoader;
-use BroSolutions\QuickOrder\Service\Quote\Product\Type\TypeStrategyInterface;
+use Exception;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Quote\Model\Quote;
@@ -34,22 +34,24 @@ class ProductAdder
     /**
      * @var BulkLoader
      */
-    private $bulkLoader;
+    private BulkLoader $bulkLoader;
 
     /**
-     * @var TypeStrategyInterface[]
+     * @var array
      */
-    private $strategies;
+    private array $strategies;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
+     * Constructor.
+     *
      * @param BulkLoader $bulkLoader
      * @param LoggerInterface $logger
-     * @param array $strategies Injected via di.xml
+     * @param array $strategies
      */
     public function __construct(
         BulkLoader $bulkLoader,
@@ -62,7 +64,7 @@ class ProductAdder
     }
 
     /**
-     * Processes raw product data, loads models in bulk, validates, and adds to quote.
+     * Processes raw product data, validates, and adds to quote.
      *
      * @param Quote $quote
      * @param array $productsData
@@ -75,6 +77,7 @@ class ProductAdder
     {
         $skus = array_column($productsData, 'sku');
         $loadedProducts = $this->bulkLoader->loadBySkus($skus, $storeId);
+        $customerGroupId = (int)$quote->getCustomerGroupId();
 
         $originalPrices = json_decode((string)$schedule->getData('original_prices'), true) ?? [];
         $actionMissing = $schedule->getData('action_missing');
@@ -108,17 +111,21 @@ class ProductAdder
             }
 
             $strategy = $this->strategies[$typeId] ?? $this->strategies['simple'];
+            $currentPrice = $strategy->calculatePrice($product, $itemData, $customerGroupId);
 
-            if ($actionPrice === ScheduleResource::ACTION_BLOCK && isset($originalPrices[$sku])) {
+            if (isset($originalPrices[$sku])) {
                 $oldPrice = (float)$originalPrices[$sku];
-                $currentPrice = $strategy->calculatePrice($product, $itemData);
 
-                if ($oldPrice > 0.001) {
+                if ($actionPrice === ScheduleResource::ACTION_BLOCK && $currentPrice > $oldPrice) {
                     $diffPercent = ($currentPrice - $oldPrice) / $oldPrice * 100;
                     if ($diffPercent > 0 && $diffPercent > $threshold) {
                         $this->handleError(
                             $sku,
-                            sprintf("Price changed by %.2f%% (threshold %.2f%%).", $diffPercent, $threshold),
+                            sprintf(
+                                "Price increased by %.2f%% (threshold %.2f%%).",
+                                $diffPercent,
+                                $threshold
+                            ),
                             ScheduleResource::ACTION_ERROR
                         );
                         continue;
@@ -128,7 +135,7 @@ class ProductAdder
 
             try {
                 $strategy->addToQuote($quote, $product, $itemData, $storeId);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->logger->warning('Failed to add product SKU ' . $sku . ': ' . $e->getMessage());
             }
         }

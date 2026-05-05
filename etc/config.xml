@@ -14,6 +14,10 @@
             <general>
                 <search_results_limit>10</search_results_limit>
             </general>
+            <scheduled_automated_orders>
+                <price_alert_enable>0</price_alert_enable>
+                <price_alert_cron_expr>0 * * * *</price_alert_cron_expr>
+            </scheduled_automated_orders>
         </brosolution_quick_order>
     </default>
 </config>

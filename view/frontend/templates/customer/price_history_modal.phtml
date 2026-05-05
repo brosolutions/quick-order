@@ -1,0 +1,123 @@
+<?php
+/**
+ * Copyright (c) 2026 BroSolutions
+ * All rights reserved
+ *
+ * This product includes proprietary software developed at BroSolutions, Ukraine
+ * For more information see https://www.brosolutions.net/
+ *
+ * To obtain a valid license for using this software please contact us at
+ * contact@brosolutions.net
+ */
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+
+/** @var Escaper $escaper
+ * @var Template $block
+ */
+?>
+
+<div id="qo-price-history-modal" class="qo-modal-overlay" style="display:none;">
+    <div class="qo-modal-content">
+        <span class="qo-modal-close">&times;</span>
+        <h2 id="qo-modal-title" class="text-2xl font-bold mb-4">Price History</h2>
+        <div class="qo-chart-container">
+            <canvas id="qoPriceChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('qo-price-history-modal');
+        const closeBtn = modal.querySelector('.qo-modal-close');
+        const title = document.getElementById('qo-modal-title');
+        let chartInstance = null;
+
+        // Cross-theme script loader (Luma / Hyva)
+        function loadChartJs(callback) {
+            if (typeof Chart !== 'undefined') {
+                callback();
+                return;
+            }
+
+            const chartUrl = 'https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js';
+
+            // Check if we are in a RequireJS environment (Luma)
+            if (typeof require !== 'undefined' && typeof define !== 'undefined' && define.amd) {
+                require([chartUrl], function (ChartJs) {
+                    // Force the module into the global scope for our vanilla script
+                    window.Chart = ChartJs;
+                    callback();
+                });
+            } else {
+                // Vanilla JS environment (Hyva)
+                const script = document.createElement('script');
+                script.src = chartUrl;
+                script.onload = callback;
+                document.head.appendChild(script);
+            }
+        }
+
+        // Close modal handlers
+        closeBtn.onclick = function() { modal.style.display = 'none'; };
+        window.onclick = function(event) { if (event.target === modal) modal.style.display = 'none'; };
+
+        // Event delegation to support dynamically loaded components
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.action-price-history');
+            if (!btn) return;
+
+            e.preventDefault();
+            const sku = btn.getAttribute('data-sku');
+            const url = "<?= $escaper->escapeUrl($block->getUrl('automatedorders/account/pricehistory')) ?>?sku=" + encodeURIComponent(sku);
+
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || data.length === 0) {
+                        alert('<?= $escaper->escapeJs(__('No price history available for this SKU.')) ?>');
+                        return;
+                    }
+
+                    title.innerText = '<?= $escaper->escapeJs(__('Price History: ')) ?>' + sku;
+                    modal.style.display = 'block';
+
+                    loadChartJs(function() {
+                        const ctx = document.getElementById('qoPriceChart').getContext('2d');
+
+                        if (chartInstance) {
+                            chartInstance.destroy();
+                        }
+
+                        chartInstance = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.map(i => i.date),
+                                datasets: [{
+                                    label: '<?= $escaper->escapeJs(__('Price')) ?>',
+                                    data: data.map(i => i.price),
+                                    borderColor: '#006bb4',
+                                    backgroundColor: 'rgba(0, 107, 180, 0.1)',
+                                    tension: 0.1,
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: { beginAtZero: false }
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(error => console.error('Error fetching price history:', error));
+        });
+    });
+</script>
