@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -16,6 +16,9 @@ namespace BroSolutions\QuickOrder\Controller\List;
 use BroSolutions\QuickOrder\Model\ProductList;
 use BroSolutions\QuickOrder\Model\ResourceModel\ProductList as ProductListResource;
 use BroSolutions\QuickOrder\Model\ResourceModel\ProductList\CollectionFactory;
+use BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem;
+use Magento\Customer\Model\CustomerFactory as CustomerModelFactory;
+use Magento\Customer\Model\ResourceModel\Customer as CustomerModelResource;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\Action\HttpPostActionInterface;
@@ -28,10 +31,12 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Message\ManagerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
-use BroSolutions\QuickOrder\Model\ResourceModel\ProductListItem;
 
 /**
- * @copyright  Copyright (c) 2025 BroSolutions
+ * Class CloneList
+ * Handles the cloning process for QuickOrder lists.
+ *
+ * @copyright  Copyright (c) 2026 BroSolutions
  * @link       https://www.brosolutions.net/
  */
 class CloneList implements HttpPostActionInterface
@@ -82,6 +87,18 @@ class CloneList implements HttpPostActionInterface
     private $formKeyValidator;
 
     /**
+     * @var CustomerModelFactory
+     */
+    private $customerModelFactory;
+
+    /**
+     * @var CustomerModelResource
+     */
+    private $customerModelResource;
+
+    /**
+     * CloneList constructor.
+     *
      * @param Context $context
      * @param ResourceConnection $resource
      * @param ProductListResource $listResource
@@ -92,6 +109,8 @@ class CloneList implements HttpPostActionInterface
      * @param LoggerInterface $logger
      * @param ManagerInterface $messageManager
      * @param FormKeyValidator $formKeyValidator
+     * @param CustomerModelFactory $customerModelFactory
+     * @param CustomerModelResource $customerModelResource
      */
     public function __construct(
         Context $context,
@@ -101,9 +120,11 @@ class CloneList implements HttpPostActionInterface
         RedirectFactory $redirectFactory,
         RequestInterface $request,
         CollectionFactory $collectionFactory,
-        LoggerInterface            $logger,
+        LoggerInterface $logger,
         ManagerInterface $messageManager,
         FormKeyValidator $formKeyValidator,
+        CustomerModelFactory $customerModelFactory,
+        CustomerModelResource $customerModelResource
     ) {
         $this->request = $request;
         $this->resource = $resource;
@@ -114,10 +135,14 @@ class CloneList implements HttpPostActionInterface
         $this->logger = $logger;
         $this->messageManager = $messageManager;
         $this->formKeyValidator = $formKeyValidator;
+        $this->customerModelFactory = $customerModelFactory;
+        $this->customerModelResource = $customerModelResource;
     }
 
     /**
-     * @inheritdoc
+     * Execute clone action.
+     *
+     * @return Redirect
      */
     public function execute(): Redirect
     {
@@ -138,8 +163,7 @@ class CloneList implements HttpPostActionInterface
                 throw new LocalizedException(__('Invalid list.'));
             }
 
-            $itemTable  = $this->resource->getTableName(ProductListItem::QUICK_ORDER_LIST_ITEM_TABLE);
-
+            $itemTable = $this->resource->getTableName(ProductListItem::QUICK_ORDER_LIST_ITEM_TABLE);
             $collection = $this->collectionFactory->create();
             $collection->addFieldToFilter('id', $listId);
 
@@ -150,15 +174,27 @@ class CloneList implements HttpPostActionInterface
                 throw new LocalizedException(__('The list no longer exists.'));
             }
 
-            if ((int)$sourceList->getCustomerId() !== (int)$this->customerSession->getCustomerId()) {
+            $customerId = (int)$this->customerSession->getCustomerId();
+
+            if ((int)$sourceList->getCustomerId() !== $customerId) {
                 throw new LocalizedException(__('You are not allowed to clone this list.'));
             }
+
+            $customerModel = $this->customerModelFactory->create();
+            $this->customerModelResource->load($customerModel, $customerId);
+
+            $companyId = $customerModel->getData('company_id');
+            $role = $customerModel->getData('company_role');
+
+            $approvalStatus = ($companyId && $role === 'company_user') ? 'draft' : 'approved';
 
             $connection->beginTransaction();
 
             $newList = clone $sourceList;
             $newList->setId(null);
             $newList->setListName($sourceList->getListName());
+            $newList->setApprovalStatus($approvalStatus);
+            $newList->setApprovalManagerId(null);
             $newList->setCreatedAt(null);
             $newList->setUpdatedAt(null);
 
@@ -186,15 +222,14 @@ class CloneList implements HttpPostActionInterface
                 }
 
                 $connection->insertMultiple($itemTable, $insertData);
-
                 $lastInsertId = (int)$connection->lastInsertId($itemTable);
                 $index = 0;
+
                 foreach (array_keys($idMap) as $oldId) {
                     $idMap[$oldId] = $lastInsertId + $index;
                     $index++;
                 }
 
-                // Bulk update parent_id
                 $updateData = [];
                 foreach ($items as $item) {
                     if ($item['parent_id']) {
@@ -228,13 +263,15 @@ class CloneList implements HttpPostActionInterface
         } catch (LocalizedException $e) {
             $this->messageManager->addErrorMessage($e->getMessage());
         } catch (Throwable $e) {
-            $connection->rollBack();
+            if (isset($connection)) {
+                $connection->rollBack();
+            }
             $this->logger->error(sprintf('Error cloning list: %s', $e->getMessage()), $e->getTrace());
         }
 
         return $redirect->setPath(
             'customer/account/productlistview',
-            ['list_id' => $newListId]
+            ['list_id' => $newListId ?? $listId]
         );
     }
 }

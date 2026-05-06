@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Block;
 
+use BroSolutions\QuickOrder\Service\GetScheduledAutomatedOrdersEnabled;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\Exception\LocalizedException;
@@ -45,10 +46,16 @@ class Quickorder extends Template
     private $customerSession;
 
     /**
+     * @var GetScheduledAutomatedOrdersEnabled
+     */
+    private $getScheduledAutomatedOrdersEnabled;
+
+    /**
      * @param Context $context
      * @param StoreManager $storeManager
      * @param FormKey $formKey
      * @param CustomerSession $customerSession
+     * @param GetScheduledAutomatedOrdersEnabled $getScheduledAutomatedOrdersEnabled
      * @param array $data
      */
     public function __construct(
@@ -56,12 +63,14 @@ class Quickorder extends Template
         StoreManager $storeManager,
         FormKey $formKey,
         CustomerSession $customerSession,
+        GetScheduledAutomatedOrdersEnabled $getScheduledAutomatedOrdersEnabled,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->storeManager = $storeManager;
         $this->formKey = $formKey;
         $this->customerSession = $customerSession;
+        $this->getScheduledAutomatedOrdersEnabled = $getScheduledAutomatedOrdersEnabled;
     }
 
     /**
@@ -217,5 +226,15 @@ class Quickorder extends Template
     public function isCustomerLoggedIn() : bool
     {
         return $this->customerSession->isLoggedIn();
+    }
+
+    /**
+     * Check if Scheduled automated orders functionality enabled
+     *
+     * @return bool
+     */
+    public function getScheduledAutomatedOrdersEnabled() : bool
+    {
+        return $this->getScheduledAutomatedOrdersEnabled->execute();
     }
 }

@@ -17,6 +17,7 @@
         <column xsi:type="varchar" name="list_name" length="255" nullable="false" comment="List Name"/>
         <column xsi:type="int" name="customer_id" unsigned="true" nullable="false" comment="Customer ID"/>
         <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store ID"/>
+        <column xsi:type="varchar" name="approval_status" nullable="false" default="draft" length="32" comment="Approval Workflow Status"/>
         <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
         <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true" comment="Updated At"/>
         <constraint xsi:type="primary" referenceId="PRIMARY"><column name="id"/></constraint>
@@ -70,8 +71,7 @@
         <column xsi:type="timestamp" name="created_at" nullable="false" default="CURRENT_TIMESTAMP"/>
         <column xsi:type="timestamp" name="updated_at" nullable="false" default="CURRENT_TIMESTAMP" on_update="true"/>
         <constraint xsi:type="primary" referenceId="PRIMARY"><column name="schedule_id"/></constraint>
-        <constraint xsi:type="foreign" referenceId="FK_QO_SCHEDULE_LIST" referenceTable="brosolutions_quickorder_list" referenceColumn="id" column="list_id" onDelete="CASCADE"/>
-        <index referenceId="IDX_QO_SCHEDULE_NEXT_RUN"><column name="next_run_at"/></index>
+        <constraint xsi:type="foreign" referenceId="FK_QO_SCHEDULE_LIST" table="brosolutions_quickorder_schedule" column="list_id" referenceTable="brosolutions_quickorder_list" referenceColumn="id" onDelete="CASCADE"/>        <index referenceId="IDX_QO_SCHEDULE_NEXT_RUN"><column name="next_run_at"/></index>
     </table>
 
     <table name="brosolutions_quickorder_schedule_log" resource="default" engine="innodb" comment="QuickOrder Schedule Execution History">

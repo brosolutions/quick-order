@@ -1,0 +1,109 @@
+{
+    "brosolutions_quickorder_list": {
+        "column": {
+            "id": true,
+            "list_name": true,
+            "customer_id": true,
+            "store_id": true,
+            "approval_status": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "BROSOLUTIONS_QUICKORDER_LIST_CUSTOMER_ID": true,
+            "BROSOLUTIONS_QUICKORDER_LIST_STORE_ID": true,
+            "BROSOLUTIONS_QUICKORDER_LIST_LIST_NAME": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "BROSOLUTIONS_QUICKORDER_LIST_CSTR_ID_CSTR_ENTT_ENTT_ID": true,
+            "BROSOLUTIONS_QUICKORDER_LIST_STORE_ID_STORE_STORE_ID": true
+        }
+    },
+    "brosolutions_quickorder_list_item": {
+        "column": {
+            "id": true,
+            "list_id": true,
+            "product_id": true,
+            "sku": true,
+            "parent_id": true,
+            "qty": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "BROSOLUTIONS_QUICKORDER_LIST_ITEM_LIST_ID": true,
+            "BROSOLUTIONS_QUICKORDER_LIST_ITEM_PRODUCT_ID": true,
+            "BROSOLUTIONS_QUICKORDER_LIST_ITEM_PARENT_ID": true,
+            "BROSOLUTIONS_QUICKORDER_LIST_ITEM_SKU": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "FK_DA98FD095BBA9107A0618AD364C16B12": true,
+            "FK_648D640DD892ABBD1DEC73983F388939": true
+        }
+    },
+    "brosolutions_quickorder_schedule": {
+        "column": {
+            "schedule_id": true,
+            "list_id": true,
+            "shipping_address": true,
+            "billing_address": true,
+            "shipping_method": true,
+            "payment_method": true,
+            "frequency": true,
+            "frequency_value": true,
+            "start_at": true,
+            "timezone": true,
+            "next_run_at": true,
+            "last_run_at": true,
+            "status": true,
+            "last_order_id": true,
+            "action_missing": true,
+            "action_oos": true,
+            "action_price": true,
+            "price_threshold": true,
+            "original_prices": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "BROSOLUTIONS_QUICKORDER_SCHEDULE_NEXT_RUN_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "FK_229273B6F5384343771275659F1F6528": true
+        }
+    },
+    "brosolutions_quickorder_schedule_log": {
+        "column": {
+            "log_id": true,
+            "schedule_id": true,
+            "order_id": true,
+            "status": true,
+            "message": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "FK_6CE3D9A4CB3CC98872043BF0A02780D9": true
+        }
+    },
+    "brosolutions_quickorder_price_history": {
+        "column": {
+            "history_id": true,
+            "schedule_id": true,
+            "sku": true,
+            "old_price": true,
+            "new_price": true,
+            "changed_at": true
+        },
+        "index": {
+            "BROSOLUTIONS_QUICKORDER_PRICE_HISTORY_SKU": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "FK_15FB4B4F4F5563B5A7743779C0134BCF": true
+        }
+    }
+}

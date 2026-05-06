@@ -49,12 +49,13 @@ use Magento\Framework\Escaper;
     <div class="quick-order-product-form-footer">
         <button type="button" class="add-to-cart action primary inline-flex shrink-0 ml-auto  btn btn-primary mt-2 "
         ><?= $escaper->escapeHtml(__('Add to cart'))?></button>
+        <?php if ($block->getScheduledAutomatedOrdersEnabled()): ?>
         <div class="save-list-block">
             <label for="list-name">List name:</label>
             <input type="text" id="list-name" name="list-name" required />
             <button type="button" class="inline-flex btn save-list">Save list</button>
-
         </div>
+        <?php endif; ?>
         <div class="list-error" style="display:none;"></div>
     </div>
 </div>

@@ -20,6 +20,7 @@
     <settings>
         <buttons>
             <button name="save" class="BroSolutions\QuickOrder\Block\Adminhtml\Schedule\Edit\SaveButton"/>
+            <button name="delete" class="BroSolutions\QuickOrder\Block\Adminhtml\Schedule\Edit\DeleteButton"/>
             <button name="back" class="BroSolutions\QuickOrder\Block\Adminhtml\Schedule\Edit\BackButton"/>
         </buttons>
         <namespace>quickorder_schedule_form</namespace>

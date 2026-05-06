@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (c) 2025 BroSolutions
+ * Copyright (c) 2026 BroSolutions
  * All rights reserved
  *
  * This product includes proprietary software developed at BroSolutions, Ukraine
@@ -29,6 +29,7 @@ use Magento\Framework\Escaper;
             <tr>
                 <th scope="col" class="col id p-2 text-start"><?= $escaper->escapeHtml(__('List name')) ?></th>
                 <th scope="col" class="col date p-2 text-start"><?= $escaper->escapeHtml(__('Date')) ?></th>
+                <th scope="col" class="col date p-2 text-start"><?= $escaper->escapeHtml(__('Status')) ?></th>
                 <th scope="col" class="col actions p-2 text-start"><?= $escaper->escapeHtml(__('Action')) ?></th>
             </tr>
             </thead>
@@ -39,6 +40,8 @@ use Magento\Framework\Escaper;
                         class="col id p-2 text-start font-normal"><?= $escaper->escapeHtml($_list['list_name']) ?></td>
                     <td data-th="<?= $escaper->escapeHtml(__('Date')) ?>" class="col date p-2 text-start font-normal"><?= /* @noEscape */
                         $block->formatDate($_list['created_at']) ?></td>
+                    <td data-th="<?= $escaper->escapeHtml(__('Approval status')) ?>" class="col date p-2 text-start font-normal"><?= /* @noEscape */
+                        $escaper->escapeHtml($block->getStatusLabel($_list['approval_status'])) ?></td>
                     <td data-th="<?= $escaper->escapeHtml(__('Actions')) ?>" class="col actions p-2 text-start font-normal">
                         <a href="<?= $escaper->escapeUrl($block->getViewUrl($_list)) ?>" class="action view">
                             <span><?= $escaper->escapeHtml(__('View List')) ?></span>

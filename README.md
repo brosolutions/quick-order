@@ -87,6 +87,18 @@ You can add a link to this page in the menu or place it anywhere on the storefro
 
 ---
 
+## Uninstallation
+To completely remove the module, including its custom database tables and configuration settings, run the following command if the module was installed via Composer:
+
+```bash
+bin/magento module:uninstall BroSolutions_QuickOrder --clear-static-content
+```
+
+Note: The module includes an Uninstall.php script that automatically and safely drops its custom tables and cleans up its specific settings in core_config_data. If you installed the module manually rather than through Composer, you may need to use the --non-composer flag or remove the module's folder and drop its tables manually.
+
+---
+
+
 ## Feedback & Contributions
 
 Feel free to open issues or submit pull requests.

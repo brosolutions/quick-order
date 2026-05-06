@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Block\Customer;
 
+use BroSolutions\QuickOrder\Model\Config\Source\ApprovalStatus as ApprovalStatusSource;
 use BroSolutions\QuickOrder\Model\ResourceModel\ProductList\Collection;
 use BroSolutions\QuickOrder\Model\ResourceModel\ProductList\CollectionFactory as ProductListCollectionFactory;
 use Magento\Customer\Model\Session;
@@ -54,10 +55,16 @@ class ProductLists extends Template
     private $storeManager;
 
     /**
+     * @var ApprovalStatusSource
+     */
+    private $approvalStatusSource;
+
+    /**
      * @param Context $context
      * @param Session $customerSession
      * @param ProductListCollectionFactory $productListCollectionFactory
      * @param StoreManagerInterface $storeManager
+     * @param ApprovalStatusSource $approvalStatusSource
      * @param array $data
      */
     public function __construct(
@@ -65,11 +72,13 @@ class ProductLists extends Template
         Session                      $customerSession,
         ProductListCollectionFactory $productListCollectionFactory,
         StoreManagerInterface $storeManager,
+        ApprovalStatusSource $approvalStatusSource,
         array                        $data = []
     ) {
         $this->_customerSession = $customerSession;
         $this->storeManager = $storeManager;
         $this->productListCollectionFactory = $productListCollectionFactory;
+        $this->approvalStatusSource = $approvalStatusSource;
         parent::__construct($context, $data);
     }
 
@@ -100,6 +109,7 @@ class ProductLists extends Template
                 ->addFieldToSelect('list_name')
                 ->addFieldToSelect('id')
                 ->addFieldToSelect('created_at')
+                ->addFieldToSelect('approval_status')
                 ->addFieldToFilter('store_id', (int)$this->storeManager->getStore()->getId())
                 ->addFieldToFilter('customer_id', $customerId);
             $collection->setOrder('created_at', 'DESC');
@@ -160,5 +170,16 @@ class ProductLists extends Template
     public function getEmptyListMessage()
     {
         return __('You have placed no product lists.');
+    }
+
+    /**
+     * Get human-readable status label.
+     *
+     * @param string $status
+     * @return string
+     */
+    public function getStatusLabel(string $status): string
+    {
+        return $this->approvalStatusSource->getLabel($status);
     }
 }

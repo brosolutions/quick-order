@@ -69,7 +69,7 @@ use Magento\Framework\Escaper;
     <form class="block-change-list-name " action="<?= $escaper->escapeUrl($block->getChangeListNameUrl()) ?>"
           method="post">
         <?= $block->getBlockHtml('formkey'); ?>
-        <input type="text" name="list_name" class="form-input w-full" required/>
+        <input type="text" name="list_name" class="form-input w-full" value="<?= $escaper->escapeHtmlAttr($block->getListName()) ?>" required/>
         <button type="submit" class="action btn">
             <?= $escaper->escapeHtml(__('Change list name')) ?>
         </button>

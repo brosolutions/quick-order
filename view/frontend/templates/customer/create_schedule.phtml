@@ -34,6 +34,20 @@ use Magento\Framework\Escaper;
     <fieldset class="fieldset info">
         <legend class="legend"><span><?= $escaper->escapeHtml(__('Schedule Information')) ?></span></legend><br>
 
+        <div class="field field-reserved list_id required">
+            <label class="label" for="list-id"><span><?= $escaper->escapeHtml(__('Product lists')) ?></span></label>
+            <div class="control">
+                <select id="list-id" name="list_id" class="select w-full" required>
+                    <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
+                    <?php foreach ($block->getProductLists() as $list): ?>
+                        <option value="<?= $escaper->escapeHtmlAttr((string)$list->getId()) ?>">
+                            <?= $escaper->escapeHtml($list->getListName()) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
         <div class="field field-reserved shipping_address required">
             <label class="label" for="shipping-address"><span><?= $escaper->escapeHtml(__('Shipping address')) ?></span></label>
             <div class="control">
@@ -96,20 +110,6 @@ use Magento\Framework\Escaper;
             </div>
         </div>
 
-        <div class="field field-reserved list_id required">
-            <label class="label" for="list-id"><span><?= $escaper->escapeHtml(__('Product lists')) ?></span></label>
-            <div class="control">
-                <select id="list-id" name="list_id" class="select w-full" required>
-                    <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
-                    <?php foreach ($block->getProductLists() as $list): ?>
-                        <option value="<?= $escaper->escapeHtmlAttr((string)$list->getId()) ?>">
-                            <?= $escaper->escapeHtml($list->getListName()) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        </div>
-
         <div class="field field-reserved frequency required">
             <label class="label" for="frequency"><span><?= $escaper->escapeHtml(__('Frequency')) ?></span></label>
             <div class="control">
@@ -149,7 +149,7 @@ use Magento\Framework\Escaper;
                 </select>
             </div>
         </div>
-<br />
+        <br />
         <legend class="legend"><span><?= $escaper->escapeHtml(__('Product Validation Rules')) ?></span></legend><br>
         <div class="field field-reserved required">
             <label class="label"><span><?= $escaper->escapeHtml(__('If product is missing or disabled')) ?></span></label>

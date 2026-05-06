@@ -27,6 +27,7 @@ use Magento\InventoryApi\Api\Data\SourceItemInterface;
 use Magento\InventoryApi\Api\GetSourceItemsBySkuInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
+use Exception;
 
 /**
  * @copyright  Copyright (c) 2025 BroSolutions
@@ -756,5 +757,30 @@ class Items extends Template
         }
 
         return $this->listId;
+    }
+
+    /**
+     * Get list name
+     *
+     * @return string
+     */
+    public function getListName(): string
+    {
+        try {
+            $listId = $this->getListId();
+            if (!$listId) {
+                return '';
+            }
+
+            $collection = $this->productListCollectionFactory->create();
+            $collection->addFieldToSelect('list_name')
+                ->addFieldToFilter('id', $listId);
+
+            $list = $collection->getFirstItem();
+
+            return (string)$list->getData('list_name');
+        } catch (Exception $e) {
+            return '';
+        }
     }
 }
