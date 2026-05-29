@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace BroSolutions\QuickOrder\Model;
 
+use BroSolutions\QuickOrder\Api\LinksProviderInterface;
 use BroSolutions\QuickOrder\Api\ProductManagementInterface;
 use BroSolutions\QuickOrder\Service\ConvertCurrency;
 use BroSolutions\QuickOrder\Service\GetCurrencySymbol;
@@ -114,6 +115,11 @@ class ProductManagement implements ProductManagementInterface
     private string $currencyCode;
 
     /**
+     * @var LinksProviderInterface[]
+     */
+    private $linksProviders;
+
+    /**
      * @param CatalogHelper $catalogHelper
      * @param GetQuickOrderEnable $quickOrderChecker
      * @param LoggerInterface $logger
@@ -128,6 +134,7 @@ class ProductManagement implements ProductManagementInterface
      * @param ProductAttributeRepositoryInterface $attributeRepository
      * @param ImageFactory $imageFactory
      * @param Emulation $storeEmulation
+     * @param array $linksProviders
      */
 
     public function __construct(
@@ -144,7 +151,8 @@ class ProductManagement implements ProductManagementInterface
         ConvertCurrency                     $currencyConverter,
         ProductAttributeRepositoryInterface $attributeRepository,
         ImageFactory                        $imageFactory,
-        Emulation                           $storeEmulation
+        Emulation                           $storeEmulation,
+        array                               $linksProviders = []
     ) {
         $this->catalogHelper = $catalogHelper;
         $this->quickOrderChecker = $quickOrderChecker;
@@ -160,6 +168,7 @@ class ProductManagement implements ProductManagementInterface
         $this->attributeRepository = $attributeRepository;
         $this->imageFactory = $imageFactory;
         $this->storeEmulation = $storeEmulation;
+        $this->linksProviders = $linksProviders;
     }
 
     /**
@@ -230,6 +239,23 @@ class ProductManagement implements ProductManagementInterface
 
             $data['custom_options'] = $this->processCustomOptions($product);
             $data['active_custom_options'] = [];
+
+            $linkedProducts = [];
+            foreach ($this->linksProviders as $provider) {
+                $linkedProductsData = [];
+                $linkedProductsArr = $provider->getLinks($product);
+                foreach ($linkedProductsArr as $linkedProduct) {
+                    $linkedProductsData['name'] = html_entity_decode(
+                        $linkedProduct['name'],
+                        ENT_QUOTES | ENT_HTML5,
+                        'UTF-8'
+                    );
+                    $linkedProductsData['product_url'] = $linkedProduct->getProductUrl();
+                    $linkedProductsData['thumbnail'] = $this->imageFactory->create($linkedProduct, 'cart_page_product_thumbnail', [])->getImageUrl();
+                    $linkedProducts[] = $linkedProductsData;
+                }
+            }
+            $data['linked_products'] = $linkedProducts;
 
             $products[] = $data;
 
