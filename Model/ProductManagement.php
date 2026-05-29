@@ -163,6 +163,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Get full product data by SKU for the given store.
+     *
      * @param string $sku
      * @param string $storeCode
      * @return array
@@ -203,7 +205,8 @@ class ProductManagement implements ProductManagementInterface
             $data['currency_code'] = $this->currencyCode;
             $data['currency_symbol'] = $this->currencySymbolService->execute($this->currencyCode);
             $data['product_url'] = $product->getProductUrl();
-            $data['thumbnail'] = $this->imageFactory->create($product, 'cart_page_product_thumbnail', [])->getImageUrl();
+            $data['thumbnail'] = $this->imageFactory
+                ->create($product, 'cart_page_product_thumbnail', [])->getImageUrl();
 
             if (!empty($data['price'])) {
                 $converted = $this->currencyConverter->execute($data['price'], $this->currencyCode);
@@ -239,6 +242,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Enrich data array with configurable attributes and associated variants.
+     *
      * @param Product $product
      * @param array $data
      * @return array
@@ -258,6 +263,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Enrich data array with bundle options and selection structure.
+     *
      * @param Product $product
      * @param array $data
      * @return array
@@ -314,6 +321,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Enrich data array with grouped child products and their quantities.
+     *
      * @param Product $product
      * @param array $data
      * @return array
@@ -330,7 +339,9 @@ class ProductManagement implements ProductManagementInterface
             $childData = $child->getData();
             if (!empty($childData['price'])) {
                 $converted = $this->currencyConverter->execute($childData['price'], $this->currencyCode);
-                $childData['price'] = $childData['converted_new_price_value'] = $childData['base_price_value'] = $converted;
+                $childData['price'] = $converted;
+                $childData['converted_new_price_value'] = $converted;
+                $childData['base_price_value'] = $converted;
                 $totalPrice += round($converted, 2) * ((int)$childData['qty'] ?? 1);
             }
 
@@ -349,6 +360,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Build custom options array with resolved price segments.
+     *
      * @param Product $product
      * @return array
      * @throws NoSuchEntityException
@@ -374,6 +387,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Extract the first selected value per configurable attribute.
+     *
      * @param array $attributes
      * @return array
      */
@@ -389,6 +404,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Convert raw selection data into the active_selections structure expected by the frontend.
+     *
      * @param array $dataSet
      * @return array
      */
@@ -408,6 +425,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Return the first variant that shares at least one attribute value with the criteria map.
+     *
      * @param array $variants
      * @param array $criteria
      * @return array|null
@@ -423,6 +442,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Load child products for a configurable parent with image attribute pre-loaded.
+     *
      * @param Product $parent
      * @return array
      * @throws NoSuchEntityException
@@ -445,6 +466,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Extract display data from a child product: price, stock qty and thumbnail URL.
+     *
      * @param Product $child
      * @return array
      * @throws NoSuchEntityException
@@ -459,6 +482,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Return available stock quantity for the given product entity ID.
+     *
      * @param int $productId
      * @return float
      * @throws NoSuchEntityException
@@ -469,6 +494,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Build a price data array for a custom option or option value.
+     *
      * @param Value|Option $opt
      * @return array
      */
@@ -482,6 +509,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Return finalPrice, basePrice and oldPrice segments for a custom option.
+     *
      * @param Value|Option $opt
      * @return array[]
      */
@@ -495,6 +524,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Return the catalog tax price for a custom option, with or without tax.
+     *
      * @param Value|Option $opt
      * @param bool $includeTax
      * @return float
@@ -505,6 +536,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Return the converted regular (non-discounted) price for a custom option.
+     *
      * @param Value|Option $opt
      * @return float
      */
@@ -514,6 +547,8 @@ class ProductManagement implements ProductManagementInterface
     }
 
     /**
+     * Return the option price, converting from base currency when the type is fixed (not percent).
+     *
      * @param Value|Option $opt
      * @return float|string
      */

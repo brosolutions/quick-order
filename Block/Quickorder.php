@@ -112,7 +112,8 @@ class Quickorder extends Template
      */
     public function getQuickOrderSearchProductUrl()
     {
-        return $this->getUrl('rest/'. $this->storeManager->getStore()->getCode() .'/V1/bro-solutions-quick-search/search-product');
+        $storeCode = $this->storeManager->getStore()->getCode();
+        return $this->getUrl('rest/' . $storeCode . '/V1/bro-solutions-quick-search/search-product');
     }
 
     /**
@@ -122,7 +123,8 @@ class Quickorder extends Template
      */
     public function getQuickOrderGetProductUrl()
     {
-        return $this->getUrl('rest/'. $this->storeManager->getStore()->getCode() .'/V1/bro-solutions-quick-search/get-product');
+        $storeCode = $this->storeManager->getStore()->getCode();
+        return $this->getUrl('rest/' . $storeCode . '/V1/bro-solutions-quick-search/get-product');
     }
 
     /**

@@ -80,12 +80,12 @@ class CartManagement implements CartManagementInterface
 
     /**
      * @param Session $session
-     * @param Data $dataHelper
      * @param ProductRepositoryInterface $productRepository
      * @param LoggerInterface $logger
      * @param FormKey $formKey
      * @param CartRepositoryInterface $cartRepository
      * @param ManagerInterface $eventManager
+     * @param Json $json
      */
     public function __construct(
         Session                    $session,
@@ -94,7 +94,7 @@ class CartManagement implements CartManagementInterface
         FormKey                    $formKey,
         CartRepositoryInterface    $cartRepository,
         ManagerInterface           $eventManager,
-        Json $json
+        Json                       $json
     ) {
         $this->session = $session;
         $this->productRepository = $productRepository;
