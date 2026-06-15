@@ -22,9 +22,9 @@ interface ProductManagementInterface
     /**
      * Get product
      *
-     * @param string $sku
+     * @param mixed $sku
      * @param string $storeCode
      * @return mixed
      */
-    public function getProduct(string $sku, string $storeCode);
+    public function getProduct($sku, string $storeCode);
 }
