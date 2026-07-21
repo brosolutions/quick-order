@@ -10,11 +10,11 @@ Built by [BroSolutions](https://www.brosolutions.net), Magento experts since 201
 
 - Add multiple products to cart at once
 - Search by SKU or product name
+- Import a product list from CSV, and export your current list to CSV
 - Simple, fast UI
 - Compatible with Hyvä Theme
 - Useful for B2B and wholesale stores
-
-📌 CSV import/export is coming soon.
+- Extension point (`LinksProviderInterface`) for third-party modules to surface alternative products when an item is discontinued
 
 ---
 
