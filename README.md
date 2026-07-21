@@ -14,7 +14,7 @@ Built by [BroSolutions](https://www.brosolutions.net), Magento experts since 201
 - Simple, fast UI
 - Compatible with Hyvä Theme
 - Useful for B2B and wholesale stores
-- Extension point (`LinksProviderInterface`) for third-party modules to surface alternative products when an item is discontinued
+- Extension point (`LinksProviderInterface`) for third-party modules to surface alternative products when an item is discontinued — not functional out of the box; requires a separate connector module (planned, pairing with SalesUp's replacement-product data)
 
 ---
 
