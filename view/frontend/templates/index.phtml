@@ -2072,7 +2072,12 @@ use Magento\Framework\Escaper;
                     method: 'POST',
                     body: formData
                 })
-                    .then(response => response.blob())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('<?= $escaper->escapeHtml(__('Could not generate the export file.'))?>');
+                        }
+                        return response.blob();
+                    })
                     .then(blob => {
                         loader.style.display = "none";
                         const url = window.URL.createObjectURL(blob);
@@ -2084,7 +2089,9 @@ use Magento\Framework\Escaper;
                         a.remove();
                     })
                     .catch(error => {
+                        loader.style.display = "none";
                         console.error('Error downloading list', error);
+                        setStatus(error.message, true);
                     });
             }
         }
