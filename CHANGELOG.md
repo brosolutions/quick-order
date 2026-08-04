@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 — 2026-08-04
+
+### Fixed
+- `magento/framework`, `magento/module-catalog`, `magento/module-store`, `magento/module-eav` now declare an explicit minimum version instead of `*`, which Magento Marketplace's composer.json validator rejects.
+
 ## 1.1.0 — 2026-07-21
 
 ### Added
