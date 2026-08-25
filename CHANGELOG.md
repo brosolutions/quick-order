@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2 - 2026-08-25
+
+### Fixed
+- Cart icon count and cart totals no longer stay stale after adding products from Quick Order - the request went through `fetch()` instead of jQuery's AJAX, so the `cart` customer-data section was never invalidated. It's now invalidated explicitly before the redirect to the cart page.
+- CSV import no longer silently swaps in a default product variant when a row's `option_N` value doesn't match any real option on a configurable product (e.g. a typo'd color or size). That row is now skipped and reported as an error instead of adding the wrong variant.
+
+### Added
+- CSV import now shows an import summary (products imported, rows skipped with the reason) in the page's standard message area instead of a status line next to the upload button that was easy to miss.
+
 ## 1.1.1 — 2026-08-04
 
 ### Fixed

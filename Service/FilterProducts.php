@@ -25,32 +25,40 @@ class FilterProducts
     /**
      * @param array $products
      * @param array $options
-     * @return array
+     * @return array{products: array, errors: string[]}
      * @throws RandomException
      */
     public function execute(array $products, array $options): array
     {
         $data = [];
+        $errors = [];
         foreach ($products as $product) {
             $product['pid'] = random_int(1000000000000, 9999999999999);
 
             switch ($product['type_id']) {
                 case Configurable::TYPE_CODE:
-                    $data[] = $this->processConfigurable($product, $options);
+                    $product = $this->processConfigurable($product, $options);
                     break;
                 case Type::TYPE_BUNDLE:
-                    $data[] = $this->processBundle($product, $options);
+                    $product = $this->processBundle($product, $options);
                     break;
                 case 'grouped':
-                    $data[] = $this->processGrouped($product, $options);
+                    $product = $this->processGrouped($product, $options);
                     break;
                 case 'simple':
-                    $data[] = $this->processSimple($product, $options);
+                    $product = $this->processSimple($product, $options);
                     break;
             }
+
+            if (isset($product['error'])) {
+                $errors[] = $product['error'];
+                continue;
+            }
+
+            $data[] = $product;
         }
 
-        return $data;
+        return ['products' => $data, 'errors' => $errors];
     }
 
     /**
@@ -63,16 +71,41 @@ class FilterProducts
         if (empty($option = $this->getOptionFromProduct($product, $options))) {
             return $product;
         }
+
+        $matchedProduct = null;
         foreach ($product['used_products'] as $usedProduct) {
             if ($this->hasExactOptions($usedProduct, $option[0]['options'])) {
-                $product['active_product'] =  $usedProduct;
-                $product['qty'] = $product['qty'];
+                $matchedProduct = $usedProduct;
                 break;
             }
         }
-        $qty = $this->getQtyFromOptions($product['sku'], $options);
-        $product['qty'] = $qty;
+
+        if ($matchedProduct === null) {
+            $product['error'] = sprintf(
+                'SKU %s: no product variant matches the requested options (%s). Product was not added.',
+                $product['sku'],
+                $this->formatOptions($option[0]['options'])
+            );
+            return $product;
+        }
+
+        $product['active_product'] = $matchedProduct;
+        $product['qty'] = $this->getQtyFromOptions($product['sku'], $options);
         return $product;
+    }
+
+    /**
+     * @param array $options
+     * @return string
+     */
+    private function formatOptions(array $options): string
+    {
+        $parts = [];
+        foreach ($options as $opt) {
+            $parts[] = trim($opt['label']) . ':' . trim($opt['value']);
+        }
+
+        return implode(', ', $parts);
     }
 
     /**

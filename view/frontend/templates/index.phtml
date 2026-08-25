@@ -2103,6 +2103,21 @@ use Magento\Framework\Escaper;
             statusBox.style.color = isError ? 'red' : 'inherit';
         }
 
+        function showPageMessages(newMessages) {
+            let existingMessages = [];
+            const match = document.cookie.match(/(?:^|; )mage-messages=([^;]*)/);
+            if (match && match[1]) {
+                try {
+                    existingMessages = JSON.parse(decodeURIComponent(match[1])) || [];
+                } catch (e) {
+                    existingMessages = [];
+                }
+            }
+
+            const messages = existingMessages.concat(newMessages);
+            document.cookie = 'mage-messages=' + encodeURIComponent(JSON.stringify(messages)) + '; path=/; samesite=strict';
+        }
+
         async function csvUploader(button) {
 
 
@@ -2132,9 +2147,25 @@ use Magento\Framework\Escaper;
                 })
                 .then(function (data) {
                     if (data && data.success) {
-                        setStatus('<?= $escaper->escapeHtml(__('Done'))?>: ' + (data.message || 'OK') + (data.stored_as ? ' (' + data.stored_as + ')' : ''));
                         localStorage.removeItem("quick_order_local_storage");
                         localStorage.setItem("quick_order_local_storage", JSON.stringify(data.products));
+
+                        const pageMessages = [];
+                        if (data.products && data.products.length > 0) {
+                            pageMessages.push({
+                                type: 'success',
+                                text: data.products.length + ' <?= $escaper->escapeJs(__('product(s) imported successfully.'))?>'
+                            });
+                        }
+                        if (data.errors && data.errors.length > 0) {
+                            data.errors.forEach(function (text) {
+                                pageMessages.push({type: 'error', text: text});
+                            });
+                        }
+                        if (pageMessages.length > 0) {
+                            showPageMessages(pageMessages);
+                        }
+
                         window.location.reload(true);
                     } else {
                         setStatus('<?= $escaper->escapeHtml(__('Error'))?>: ' + (data && data.message ? data.message : 'Unknown error'), true);
@@ -2170,7 +2201,7 @@ use Magento\Framework\Escaper;
                     .then(data => {
                         if (data.success) {
                             localStorage.removeItem('quick_order_local_storage');
-                            window.location.href = urlToCartRedirect;
+                            invalidateCartSectionAndRedirect();
                         } else {
                             console.log(data.message);
                         }
@@ -2178,6 +2209,17 @@ use Magento\Framework\Escaper;
                     .catch(error => {
                         console.error('Error adding to cart');
                     });
+            }
+        }
+
+        function invalidateCartSectionAndRedirect() {
+            if (typeof require === 'function') {
+                require(['Magento_Customer/js/customer-data'], function (customerData) {
+                    customerData.invalidate(['cart']);
+                    window.location.href = urlToCartRedirect;
+                });
+            } else {
+                window.location.href = urlToCartRedirect;
             }
         }
 

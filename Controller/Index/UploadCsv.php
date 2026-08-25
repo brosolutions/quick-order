@@ -155,7 +155,7 @@ class UploadCsv implements HttpPostActionInterface
 
             $products = $this->productManagement->getProduct($csvFileContentArray, $this->request->getParam('storeCode'));
 
-            $filteredProducts = $this->filterProducts->execute($products, $csvFileContentArray);
+            $filterResult = $this->filterProducts->execute($products, $csvFileContentArray);
 
         } catch (Exception $e) {
             return $resultJson->setData(
@@ -168,7 +168,8 @@ class UploadCsv implements HttpPostActionInterface
 
         return $resultJson->setData([
             'success' => true,
-            'products' => $filteredProducts
+            'products' => $filterResult['products'],
+            'errors' => $filterResult['errors']
         ]);
     }
 }
