@@ -50,7 +50,7 @@ class CsvProductParser
             throw new \RuntimeException("Cannot open file: {$filePath}");
         }
 
-        $header = fgetcsv($handle);
+        $header = fgetcsv($handle, 0, ',', '"', '\\');
         if (!$header) {
             throw new \RuntimeException("CSV file is empty or invalid: {$filePath}");
         }
@@ -58,7 +58,7 @@ class CsvProductParser
         $result = [];
         $line   = 1;
 
-        while (($row = fgetcsv($handle)) !== false) {
+        while (($row = fgetcsv($handle, 0, ',', '"', '\\')) !== false) {
             $line++;
 
             if (count($row) < count($header)) {
