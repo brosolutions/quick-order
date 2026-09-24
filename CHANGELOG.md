@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 - 2026-09-24
+
+### Fixed
+- CSV import failed on PHP 8.4 and later with "Deprecated Functionality: fgetcsv(): the $escape parameter must be provided as its default value will change". The `$escape` argument is now passed explicitly, so the parsing behavior is unchanged and works on PHP 7.4 - 8.5.
+
 ## 1.1.2 - 2026-08-25
 
 ### Fixed
