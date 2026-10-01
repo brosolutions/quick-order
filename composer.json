@@ -18,6 +18,11 @@
         "psr-4": {
             "BroSolutions\\QuickOrder\\": ""
         }
+    },
+    "extra": {
+        "map": [
+            ["*", "BroSolutions/QuickOrder"]
+        ]
     }
 }
 
