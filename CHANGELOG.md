@@ -5,6 +5,9 @@
 ### Fixed
 - CSV import failed on PHP 8.4 and later with "Deprecated Functionality: fgetcsv(): the $escape parameter must be provided as its default value will change". The `$escape` argument is now passed explicitly, so the parsing behavior is unchanged and works on PHP 7.4 - 8.5.
 
+### Changed
+- `composer.json` now declares an explicit install path (`extra.map`) so Composer-based installs place the module at `app/code/BroSolutions/QuickOrder` reliably, instead of relying on the installer to derive it from the package name.
+
 ## 1.1.2 - 2026-08-25
 
 ### Fixed
